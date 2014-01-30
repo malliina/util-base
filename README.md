@@ -1,0 +1,1 @@
+Utility code compatible with Android. This library does not use any Java 7 APIs.
