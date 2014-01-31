@@ -12,6 +12,9 @@ class SimpleTests extends FunSuite {
   test("1+1 is 2") {
     assert(1 + 1 === 2)
   }
+  test("ranges") {
+    assert((1 to 1).size === 1)
+  }
   test("Duration.toString") {
     val output = (6 seconds).toString()
     assert(output === "6 seconds")
