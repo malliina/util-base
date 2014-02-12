@@ -6,7 +6,7 @@ object UtilBaseBuild extends Build {
   lazy val p = Project("util-base", file(".")).settings(utilSettings: _*)
 
   lazy val utilSettings = publishSettings ++ Seq(
-    version := "0.0.3",
+    version := "0.0.4",
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "1.9.2" % "test"
     )
