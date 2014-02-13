@@ -18,9 +18,15 @@ object UtilBaseBuild extends Build {
     credentials += loadDirectCredentials(Path.userHome / ".ivy2" / "sonatype.txt"),
     publishArtifact in Test := false,
     pomExtra := myGitPom(name.value)
-  )
+  ) ++ credentialsSettings(Path.userHome / ".ivy2" / "sonatype.txt")
 
-  def loadDirectCredentials(file: File) =
+  def credentialsSettings(file: File): Seq[Def.Setting[_]] =
+    Credentials.loadCredentials(file)
+      .fold(err => None, creds => Some(creds))
+      .map(creds => credentials += creds)
+      .toSeq
+
+  def loadDirectCredentials(file: File): DirectCredentials =
     Credentials.loadCredentials(file).fold(
       errorMsg => throw new Exception(errorMsg),
       cred => cred)
