@@ -1,11 +1,12 @@
 import sbt._
 
 object BuildBuild extends Build {
-  override lazy val settings = super.settings ++ sbtPlugins
+  override lazy val settings = super.settings ++ sbtPlugins ++ Seq(
+    Keys.scalaVersion := "2.10.4"
+  )
 
   def sbtPlugins = Seq(
-    "com.timushev.sbt" % "sbt-updates" % "0.1.2",
-    "com.typesafe.sbt" % "sbt-pgp" % "0.8.1",
-    "org.xerial.sbt" % "sbt-sonatype" % "0.1.4"
+    "com.github.malliina" %% "sbt-utils" % "0.0.2",
+    "com.timushev.sbt" % "sbt-updates" % "0.1.2"
   ) map addSbtPlugin
 }

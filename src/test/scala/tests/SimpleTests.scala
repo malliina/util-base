@@ -3,6 +3,9 @@ package tests
 import org.scalatest.FunSuite
 import concurrent.duration._
 import com.mle.network.NetworkDevice
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import com.mle.concurrent.FutureImplicits._
 
 /**
  *
@@ -31,5 +34,19 @@ class SimpleTests extends FunSuite {
     val s1 = Seq(1, 2, 3, 4, 5)
     val s2 = Seq(3, 4)
     assert((s1 diff s2) === Seq(1, 2, 5))
+  }
+  test("Future exceptions") {
+    val failingFuture = Future.successful(1).map(_ => throw new Exception)
+    val recovered = failingFuture.recover {
+      case _: Exception => 2
+    }
+    val two = Await.result(recovered, 2 seconds)
+    assert(two === 2)
+  }
+  test("Future.recoverAll") {
+    val f = Future(throw new IllegalArgumentException)
+    val f2 = f.recoverAll(t => 5)
+    val results = Await.result(f2, 1 second)
+    assert(results === 5)
   }
 }

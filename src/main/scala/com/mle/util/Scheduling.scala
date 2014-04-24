@@ -1,21 +1,27 @@
 package com.mle.util
 
-import java.util.concurrent.{ScheduledFuture, TimeUnit, Executors}
+import java.util.concurrent._
 import scala.concurrent.duration.Duration
 
 /**
  *
  * @author mle
  */
-object Scheduling {
-  private val executor = Executors.newSingleThreadScheduledExecutor()
-
+class Scheduling(executor: ScheduledExecutorService) {
   def every(interval: Duration)(code: => Unit): ScheduledFuture[_] = {
     val intervalMillis = interval.toMillis
     executor.scheduleWithFixedDelay(Utils.runnable(code), 1, intervalMillis, TimeUnit.MILLISECONDS)
   }
 
-  def shutdown() {
-    executor.shutdown()
+  def runnable(code: => Unit) = new Runnable {
+    def run(): Unit = code
   }
+
+  def callable[T](code: => T) = new Callable[T] {
+    def call(): T = code
+  }
+
+  def shutdown(): Unit = executor.shutdown()
 }
+
+object Scheduling extends Scheduling(Executors.newSingleThreadScheduledExecutor())

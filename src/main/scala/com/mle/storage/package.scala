@@ -11,9 +11,6 @@ package object storage {
   private val k = 1024L
 
   /**
-   * Note how StorageInt is simply a short-lived intermediate wrapper enabling a nice syntax for
-   * constructing StorageSize objects.
-   *
    * @param amount integer amount of some storage unit
    */
   implicit final class StorageInt(val amount: Int) extends StorageConversions {

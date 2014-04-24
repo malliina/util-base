@@ -29,6 +29,10 @@ class StorageSize(bytes: Long) {
 
   def >=(other: StorageSize) = this.toBytes >= other.toBytes
 
+  def ==(other: StorageSize) = this.toBytes == other.toBytes
+
+  def !=(other: StorageSize) = this.toBytes != other.toBytes
+
   /**
    * @return a string of format 'n units'
    */
