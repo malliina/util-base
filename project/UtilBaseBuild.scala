@@ -7,7 +7,7 @@ object UtilBaseBuild extends Build {
 
   lazy val utilSettings = publishSettings ++ Seq(
     scalaVersion := "2.11.0",
-    version := "0.1.0",
+    version := "0.1.1",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     crossScalaVersions := Seq("2.11.0", "2.10.4")
