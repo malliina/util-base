@@ -6,10 +6,10 @@ object UtilBaseBuild extends Build {
   lazy val p = testableProject("util-base").settings(utilSettings: _*)
 
   lazy val utilSettings = publishSettings ++ Seq(
-    scalaVersion := "2.11.0",
-    version := "0.1.3",
+    scalaVersion := "2.11.1",
+    version := "0.2.0",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
-    crossScalaVersions := Seq("2.11.0", "2.10.4")
+    crossScalaVersions := Seq("2.11.1", "2.10.4")
   )
 }

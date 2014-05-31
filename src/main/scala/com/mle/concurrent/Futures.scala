@@ -30,11 +30,11 @@ trait Futures {
     })
 
   /**
-   * Applies `test` to each element of `in` and returns the first element that
-   * completes the test successfully along with its result.
+   * Applies `test` to each element of `in` and returns the first element that completes the test successfully along
+   * with its result.
    *
-   * If all tests fail, the returned [[Future]] fails with a [[NoSuchElementException]].
-   * Failures of individual [[Future]]s are ignored.
+   * If all tests fail, the returned [[Future]] fails with a [[NoSuchElementException]]. Failures of individual
+   * [[Future]]s are ignored.
    *
    * @param in elements under test
    * @param test the test
@@ -63,11 +63,8 @@ trait Futures {
    * @param dur length of duration
    * @return a [[Future]] that completes successfully after `dur` has passed
    */
-  def delay(dur: Duration)(implicit executor: ExecutionContext): Future[Unit] = Future {
-    blocking {
-      Thread.sleep(dur.toMillis)
-    }
-  }
+  def delay(dur: Duration)(implicit executor: ExecutionContext): Future[Unit] =
+    Future(blocking(Thread.sleep(dur.toMillis)))
 
   /**
    * Constructs a future that is completed according to `keepPromise`. This pattern
@@ -80,7 +77,7 @@ trait Futures {
    * @return the future completion value
    */
   def promisedFuture[T](keepPromise: Promise[T] => Unit): Future[T] = {
-    val p = promise[T]()
+    val p = Promise[T]()
     keepPromise(p)
     p.future
   }
