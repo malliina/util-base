@@ -10,6 +10,6 @@ object UtilBaseBuild extends Build {
     version := "0.2.0",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
-    crossScalaVersions := Seq("2.11.1", "2.10.4")
+    crossScalaVersions := Seq("2.11.2", "2.10.4")
   )
 }

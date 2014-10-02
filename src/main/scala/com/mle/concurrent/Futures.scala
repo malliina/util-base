@@ -1,14 +1,17 @@
 package com.mle.concurrent
 
+import com.mle.util.Utils
+
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import com.mle.util.Utils
 
 /**
  *
  * @author mle
  */
 trait Futures {
+  def unit[T](elem: T) = Future successful elem
+
   /**
    * Fails `f` with a [[TimeoutException]] unless it's completed within `timeout`.
    *

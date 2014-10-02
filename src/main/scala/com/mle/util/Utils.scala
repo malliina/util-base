@@ -10,7 +10,8 @@ import concurrent.duration._
  * @author mle
  */
 object Utils {
-  implicit val executionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(50))
+
+  implicit val executionContext = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 
   val suppresser: PartialFunction[Throwable, Unit] = {
     case _: Throwable => ()
