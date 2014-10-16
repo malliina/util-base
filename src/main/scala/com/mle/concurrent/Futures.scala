@@ -1,6 +1,7 @@
 package com.mle.concurrent
 
 import com.mle.util.Utils
+import rx.lang.scala.Observable
 
 import scala.concurrent._
 import scala.concurrent.duration.Duration
@@ -21,7 +22,7 @@ trait Futures {
    * @return a future which may time out
    */
   def within[T](timeout: Duration)(f: Future[T])(implicit executor: ExecutionContext): Future[T] =
-    before(delay(timeout))(f)
+    before(delay2(timeout))(f)
 
   def before[T, TO](other: Future[TO])(f: Future[T])(implicit executor: ExecutionContext): Future[T] =
     promisedFuture[T](p => {
@@ -66,8 +67,11 @@ trait Futures {
    * @param dur length of duration
    * @return a [[Future]] that completes successfully after `dur` has passed
    */
+  @scala.deprecated("Use `delay2(Duration)` instead.")
   def delay(dur: Duration)(implicit executor: ExecutionContext): Future[Unit] =
     Future(blocking(Thread.sleep(dur.toMillis)))
+
+  def delay2(dur: Duration): Future[Unit] = after(dur)(())
 
   /**
    * Constructs a future that is completed according to `keepPromise`. This pattern
@@ -83,6 +87,38 @@ trait Futures {
     val p = Promise[T]()
     keepPromise(p)
     p.future
+  }
+
+  def after[T](duration: Duration)(code: => T): Future[T] = {
+    val p = Promise[T]()
+    lazy val codeEval = code
+    val sub = observeAfter(duration).subscribe(_ => p trySuccess codeEval)
+    val ret = p.future
+    ret.onComplete(_ => sub.unsubscribe())(ExecutionContext.Implicits.global)
+    ret
+  }
+
+  /**
+   * Emits 0 and completes after `duration`.
+   *
+   * @param duration
+   * @return a one-item [[Observable]]
+   */
+  def observeAfter(duration: Duration) = Observable.interval(duration).take(1)
+
+  def timeoutAfter[T](duration: Duration, promise: Promise[T]) =
+    after(duration)(promise tryFailure new concurrent.TimeoutException(s"Timed out after $duration."))
+
+  /**
+   *
+   * @param duration timeout
+   * @tparam T type of promise
+   * @return a [[Promise]] that fails with a [[TimeoutException]] after `duration` has passed unless completed by then
+   */
+  def timedPromise[T](duration: Duration) = {
+    val p = Promise[T]()
+    timeoutAfter(duration, p)
+    p
   }
 }
 

@@ -1,6 +1,7 @@
 package com.mle.concurrent
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 /**
  *
@@ -24,7 +25,7 @@ object FutureImplicits {
     def exists(predicate: T => Boolean)(implicit ec: ExecutionContext): Future[Boolean] =
       fut.map(predicate).recoverAll(_ => false)
 
-    def isDefined = fut.exists(_ => true)
+    def isDefined(implicit ec: ExecutionContext) = fut.exists(_ => true)
 
     /**
      * The following doesn't compile:
@@ -35,6 +36,26 @@ object FutureImplicits {
     //      fut.recover {
     //        case e: E => fix(e)
     //      }
+  }
+
+  implicit class RichPromise[T](p: Promise[T]) {
+    /**
+     * Times out this promise after `to` has passed.
+     *
+     * @param to timeout
+     */
+    def timeout(to: Duration) = Futures.timeoutAfter(to, p)
+
+    /**
+     *
+     * @return a new [[Promise]]
+     */
+    def withTimeout(to: Duration): Promise[T] = {
+      val newPromise = Promise[T]()
+      p.future.onComplete(newPromise.tryComplete)(ExecutionContext.Implicits.global)
+      newPromise timeout to
+      newPromise
+    }
   }
 
 }
