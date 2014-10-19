@@ -7,10 +7,12 @@ object UtilBaseBuild extends Build {
 
   lazy val utilSettings = SbtUtils.publishSettings ++ Seq(
     scalaVersion := "2.11.2",
-    version := "0.2.1",
+    version := "0.2.2",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     crossScalaVersions := Seq("2.11.2", "2.10.4"),
-    libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.22.0"
+    libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.22.0",
+    javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
+    scalacOptions += "-target:jvm-1.6"
   )
 }
