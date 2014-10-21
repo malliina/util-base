@@ -40,7 +40,7 @@ object FutureImplicits {
 
   implicit class RichPromise[T](p: Promise[T]) {
     /**
-     * Times out this promise after `to` has passed.
+     * Tries to fail this [[Promise]] with a [[concurrent.TimeoutException]] after `to`.
      *
      * @param to timeout
      */

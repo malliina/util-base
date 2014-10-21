@@ -1,18 +1,14 @@
 package com.mle.util
 
-import java.util.concurrent.Executors
-import scala.concurrent.ExecutionContext
 import java.io.Closeable
-import concurrent.duration._
+
+import scala.concurrent.duration._
 
 /**
  *
  * @author mle
  */
 object Utils {
-
-  implicit val executionContext = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
-
   val suppresser: PartialFunction[Throwable, Unit] = {
     case _: Throwable => ()
   }
