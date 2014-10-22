@@ -19,6 +19,7 @@ object UtilBaseBuild extends Build {
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6",
     resolvers ++= Seq(
+      "typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
       "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
       "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/")
   )
