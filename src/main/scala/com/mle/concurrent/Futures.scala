@@ -5,6 +5,7 @@ import rx.lang.scala.Observable
 
 import scala.concurrent._
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 /**
  *
@@ -89,22 +90,31 @@ trait Futures {
     p.future
   }
 
+  /**
+   * Runs `code` after `duration`. The returned [[Future]] contains the successful result of `code` or is completed with
+   * any failure it might throw.
+   *
+   * @param duration delay after which to run `code`
+   * @param code code to run
+   * @tparam T type of successful result
+   * @return a [[Future]] of the result of running `code` or completed with any failure that it might throw
+   */
   def after[T](duration: Duration)(code: => T): Future[T] = {
     val p = Promise[T]()
     lazy val codeEval = code
-    val sub = observeAfter(duration).subscribe(_ => p trySuccess codeEval)
+    val sub = emitAfter(duration).subscribe(_ => p tryComplete Try(codeEval))
     val ret = p.future
-    ret.onComplete(_ => sub.unsubscribe())(ExecutionContext.Implicits.global)
+    ret.onComplete(_ => sub.unsubscribe())(ExecutionContexts.cached)
     ret
   }
 
   /**
-   * Emits 0 and completes after `duration`.
+   * Emits 0L and completes after `duration`.
    *
    * @param duration
    * @return a one-item [[Observable]]
    */
-  def observeAfter(duration: Duration) = Observable.interval(duration).take(1)
+  def emitAfter(duration: Duration) = Observable.interval(duration).take(1)
 
   def timeoutAfter[T](duration: Duration, promise: Promise[T]) =
     after(duration)(promise tryFailure new concurrent.TimeoutException(s"Timed out after $duration."))

@@ -12,7 +12,7 @@ object UtilBaseBuild extends Build {
     SbtUtils.developerName := "Michael Skogberg",
     crossScalaVersions := Seq("2.11.2", "2.10.4"),
     libraryDependencies ++= Seq(
-      "io.reactivex" % "rxscala_2.11" % "0.22.0",
+      "io.reactivex" %% "rxscala" % "0.22.0",
       "com.typesafe.play" %% "play-json" % "2.3.5",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
@@ -20,7 +20,6 @@ object UtilBaseBuild extends Build {
     scalacOptions += "-target:jvm-1.6",
     resolvers ++= Seq(
       "typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
-      "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
       "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/")
   )
 }
