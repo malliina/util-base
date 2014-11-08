@@ -6,11 +6,11 @@ object UtilBaseBuild extends Build {
   lazy val p = SbtProjects.mavenPublishProject("util-base").settings(utilSettings: _*)
 
   lazy val utilSettings = Seq(
-    scalaVersion := "2.11.2",
-    version := "0.3.0",
+    scalaVersion := "2.11.4",
+    version := "0.3.4",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
-    crossScalaVersions := Seq("2.11.2", "2.10.4"),
+    crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
     libraryDependencies ++= Seq(
       "io.reactivex" %% "rxscala" % "0.22.0",
       "com.typesafe.play" %% "play-json" % "2.3.5",
@@ -19,7 +19,7 @@ object UtilBaseBuild extends Build {
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6",
     resolvers ++= Seq(
-      "typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
+      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
       "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/")
   )
 }
