@@ -1,5 +1,6 @@
 package com.mle.util
 
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -8,11 +9,15 @@ import scala.util.{Failure, Success, Try}
 object TryImplicits {
 
   implicit class RichTry[T](orig: Try[T]) {
-    def recoverAll[U >: T](fix: Throwable => U) = orig.recover {
+    def recoverNonFatal[U >: T](fix: Throwable => U): Try[U] = orig.recover {
+      case NonFatal(t) => fix(t)
+    }
+
+    def recoverAll[U >: T](fix: Throwable => U): Try[U] = orig.recover {
       case t: Throwable => fix(t)
     }
 
-    def recoverWithAll[U >: T](fix: Throwable => Try[U]) = orig.recoverWith {
+    def recoverWithAll[U >: T](fix: Throwable => Try[U]): Try[U] = orig.recoverWith {
       case t: Throwable => fix(t)
     }
 
