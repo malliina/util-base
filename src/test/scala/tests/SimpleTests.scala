@@ -1,11 +1,11 @@
 package tests
 
-import org.scalatest.FunSuite
-import concurrent.duration._
 import com.mle.network.NetworkDevice
-import scala.concurrent.{Await, Future}
+import org.scalatest.FunSuite
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.mle.concurrent.FutureImplicits._
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 /**
  *
@@ -19,7 +19,7 @@ class SimpleTests extends FunSuite {
     assert((1 to 1).size === 1)
   }
   test("Duration.toString") {
-    val output = (6 seconds).toString()
+    val output = (6.seconds).toString()
     assert(output === "6 seconds")
   }
   test("NetworkDevice.adjacentIPs") {
@@ -40,13 +40,14 @@ class SimpleTests extends FunSuite {
     val recovered = failingFuture.recover {
       case _: Exception => 2
     }
-    val two = Await.result(recovered, 2 seconds)
+    val two = Await.result(recovered, 2.seconds)
     assert(two === 2)
   }
   test("Future.recoverAll") {
+    import com.mle.concurrent.FutureOps
     val f = Future(throw new IllegalArgumentException)
     val f2 = f.recoverAll(t => 5)
-    val results = Await.result(f2, 1 second)
+    val results = Await.result(f2, 1.second)
     assert(results === 5)
   }
 }

@@ -6,13 +6,13 @@ object UtilBaseBuild extends Build {
   lazy val p = SbtProjects.mavenPublishProject("util-base").settings(utilSettings: _*)
 
   lazy val utilSettings = Seq(
-    scalaVersion := "2.11.4",
-    version := "0.3.4",
+    scalaVersion := "2.11.5",
+    version := "0.4.0",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
     libraryDependencies ++= Seq(
-      "io.reactivex" %% "rxscala" % "0.22.0",
+      "io.reactivex" %% "rxscala" % "0.23.1",
       "com.typesafe.play" %% "play-json" % "2.3.5",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),

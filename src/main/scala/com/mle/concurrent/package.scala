@@ -1,15 +1,13 @@
-package com.mle.concurrent
+package com.mle
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Promise, ExecutionContext, Future}
 
 /**
- *
- * @author mle
+ * @author Michael
  */
-object FutureImplicits {
-
-  implicit class RichFuture[T](fut: Future[T]) {
+package object concurrent {
+  implicit class FutureOps[T](fut: Future[T]) {
     def recoverAll[U >: T](fix: Throwable => U)(implicit ec: ExecutionContext): Future[U] =
       fut.recover {
         case t: Throwable => fix(t)
@@ -38,7 +36,7 @@ object FutureImplicits {
     //      }
   }
 
-  implicit class RichPromise[T](p: Promise[T]) {
+  implicit class PromiseOps[T](p: Promise[T]) {
     /**
      * Tries to fail this [[Promise]] with a [[concurrent.TimeoutException]] after `to`.
      *
@@ -57,5 +55,4 @@ object FutureImplicits {
       newPromise
     }
   }
-
 }

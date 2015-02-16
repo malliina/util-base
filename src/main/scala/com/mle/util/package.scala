@@ -1,4 +1,4 @@
-package com.mle.util
+package com.mle
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -6,9 +6,9 @@ import scala.util.{Failure, Success, Try}
 /**
  * @author Michael
  */
-object TryImplicits {
+package object util {
 
-  implicit class RichTry[T](orig: Try[T]) {
+  implicit class TryOps[T](orig: Try[T]) {
     def recoverNonFatal[U >: T](fix: Throwable => U): Try[U] = orig.recover {
       case NonFatal(t) => fix(t)
     }
