@@ -13,7 +13,7 @@ object UtilBaseBuild extends Build {
     crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
     libraryDependencies ++= Seq(
       "io.reactivex" %% "rxscala" % "0.23.1",
-      "com.typesafe.play" %% "play-json" % "2.3.5",
+      "com.typesafe.play" %% "play-json" % "2.3.8",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
