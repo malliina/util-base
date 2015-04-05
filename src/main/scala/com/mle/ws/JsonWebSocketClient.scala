@@ -33,4 +33,3 @@ object JsonWebSocketClient {
   case object Connected extends SocketEvent
 
 }
-

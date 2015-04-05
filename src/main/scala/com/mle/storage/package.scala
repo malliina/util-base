@@ -42,5 +42,3 @@ package object storage {
   }
 
 }
-
-

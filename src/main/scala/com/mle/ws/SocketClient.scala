@@ -10,7 +10,7 @@ import org.java_websocket.handshake.ServerHandshake
 import rx.lang.scala.{Observable, Subject}
 
 import scala.collection.JavaConversions._
-import scala.concurrent.duration.DurationLong
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
