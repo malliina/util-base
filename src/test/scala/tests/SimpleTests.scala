@@ -4,7 +4,7 @@ import com.mle.network.NetworkDevice
 import org.scalatest.FunSuite
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
 /**
@@ -19,7 +19,7 @@ class SimpleTests extends FunSuite {
     assert((1 to 1).size === 1)
   }
   test("Duration.toString") {
-    val output = (6.seconds).toString()
+    val output = 6.seconds.toString()
     assert(output === "6 seconds")
   }
   test("NetworkDevice.adjacentIPs") {
