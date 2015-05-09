@@ -1,16 +1,18 @@
 import bintray.Plugin.bintraySettings
-import com.mle.sbtutils.{SbtProjects, SbtUtils}
+import com.mle.sbtutils.SbtProjects
 import sbt.Keys._
 import sbt._
+import com.mle.sbtutils.SbtUtils.{gitUserName, developerName}
 
 object UtilBaseBuild extends Build {
-  lazy val p = SbtProjects.mavenPublishProject("util-base").settings(utilSettings: _*)
+  lazy val p = SbtProjects.testableProject("util-base").settings(utilSettings: _*)
 
   lazy val utilSettings = bintraySettings ++ Seq(
     scalaVersion := "2.11.6",
     version := "0.6.2",
-    SbtUtils.gitUserName := "malliina",
-    SbtUtils.developerName := "Michael Skogberg",
+    gitUserName := "malliina",
+    organization := s"com.github.${gitUserName.value}",
+    developerName := "Michael Skogberg",
     crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
     libraryDependencies ++= Seq(
       "io.reactivex" %% "rxscala" % "0.24.0",
@@ -19,9 +21,9 @@ object UtilBaseBuild extends Build {
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6",
-    resolvers ++= Seq(
-      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
-      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/"),
+//    resolvers ++= Seq(
+//      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
+//      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/"),
     licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
   )
 }
