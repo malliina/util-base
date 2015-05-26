@@ -9,7 +9,7 @@ object UtilBaseBuild extends Build {
 
   lazy val utilSettings = bintraySettings ++ Seq(
     scalaVersion := "2.11.6",
-    version := "0.6.3",
+    version := "0.6.4",
     gitUserName := "malliina",
     organization := s"com.github.${gitUserName.value}",
     developerName := "Michael Skogberg",
@@ -21,9 +21,6 @@ object UtilBaseBuild extends Build {
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6",
-//    resolvers ++= Seq(
-//      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
-//      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/"),
     licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
   )
 }
