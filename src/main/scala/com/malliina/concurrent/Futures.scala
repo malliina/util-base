@@ -1,6 +1,6 @@
-package com.mle.concurrent
+package com.malliina.concurrent
 
-import com.mle.util.Utils
+import com.malliina.util.Utils
 import rx.lang.scala.Observable
 
 import scala.concurrent._

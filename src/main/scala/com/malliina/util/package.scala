@@ -1,4 +1,4 @@
-package com.mle
+package com.malliina
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}

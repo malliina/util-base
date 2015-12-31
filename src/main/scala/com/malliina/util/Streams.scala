@@ -1,4 +1,4 @@
-package com.mle.util
+package com.malliina.util
 
 import java.io.{OutputStream, InputStream}
 

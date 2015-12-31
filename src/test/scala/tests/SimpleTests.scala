@@ -1,6 +1,6 @@
 package tests
 
-import com.mle.network.NetworkDevice
+import com.malliina.network.NetworkDevice
 import org.scalatest.FunSuite
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,7 +44,7 @@ class SimpleTests extends FunSuite {
     assert(two === 2)
   }
   test("Future.recoverAll") {
-    import com.mle.concurrent.FutureOps
+    import com.malliina.concurrent.FutureOps
     val f = Future(throw new IllegalArgumentException)
     val f2 = f.recoverAll(t => 5)
     val results = Await.result(f2, 1.second)

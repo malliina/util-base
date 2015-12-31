@@ -1,4 +1,4 @@
-package com.mle.storage
+package com.malliina.storage
 
 class StorageSize(bytes: Long) {
   private val k = 1024

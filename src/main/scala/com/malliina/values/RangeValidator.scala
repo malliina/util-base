@@ -1,4 +1,4 @@
-package com.mle.values
+package com.malliina.values
 
 import play.api.libs.json._
 

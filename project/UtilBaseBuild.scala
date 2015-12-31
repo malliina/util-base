@@ -9,7 +9,7 @@ object UtilBaseBuild extends Build {
 
   lazy val utilSettings = bintraySettings ++ Seq(
     scalaVersion := "2.11.7",
-    version := "0.8.0",
+    version := "0.9.0",
     gitUserName := "malliina",
     organization := s"com.${gitUserName.value}",
     developerName := "Michael Skogberg",

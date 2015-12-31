@@ -1,4 +1,4 @@
-package com.mle.ws
+package com.malliina.ws
 
 /**
  *

@@ -1,4 +1,4 @@
-package com.mle.util
+package com.malliina.util
 
 import java.util.concurrent._
 import scala.concurrent.duration.Duration

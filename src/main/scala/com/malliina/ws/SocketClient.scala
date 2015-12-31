@@ -1,9 +1,9 @@
-package com.mle.ws
+package com.malliina.ws
 
 import java.net.URI
 import javax.net.ssl.SSLContext
 
-import com.mle.concurrent.{ExecutionContexts, Futures}
+import com.malliina.concurrent.{ExecutionContexts, Futures}
 import org.java_websocket.client.{DefaultSSLWebSocketClientFactory, WebSocketClient}
 import org.java_websocket.drafts.Draft_10
 import org.java_websocket.handshake.ServerHandshake

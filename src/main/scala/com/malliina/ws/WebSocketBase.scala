@@ -1,4 +1,4 @@
-package com.mle.ws
+package com.malliina.ws
 
 import scala.concurrent.Future
 import scala.util.Try

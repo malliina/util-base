@@ -1,4 +1,4 @@
-package com.mle.concurrent
+package com.malliina.concurrent
 
 import java.util.concurrent.Executors
 

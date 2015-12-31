@@ -1,4 +1,4 @@
-package com.mle
+package com.malliina
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Promise, ExecutionContext, Future}

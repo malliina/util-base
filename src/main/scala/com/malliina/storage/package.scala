@@ -1,4 +1,4 @@
-package com.mle
+package com.malliina
 
 /**
  * Adapted from concurrent.duration._

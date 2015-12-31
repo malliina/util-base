@@ -1,4 +1,4 @@
-package com.mle.util
+package com.malliina.util
 
 /**
  * A partial implementation of http://semver.org/.

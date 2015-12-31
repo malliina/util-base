@@ -1,4 +1,4 @@
-package com.mle.network
+package com.malliina.network
 
 import java.net.{InetAddress, NetworkInterface}
 import collection.JavaConversions._
