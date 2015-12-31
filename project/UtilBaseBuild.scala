@@ -11,11 +11,11 @@ object UtilBaseBuild extends Build {
     scalaVersion := "2.11.7",
     version := "0.8.0",
     gitUserName := "malliina",
-    organization := s"com.github.${gitUserName.value}",
+    organization := s"com.${gitUserName.value}",
     developerName := "Michael Skogberg",
-    crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
+    crossScalaVersions := Seq(scalaVersion.value, "2.10.6"),
     libraryDependencies ++= Seq(
-      "io.reactivex" %% "rxscala" % "0.25.0",
+      "io.reactivex" %% "rxscala" % "0.25.1",
       "com.typesafe.play" %% "play-json" % "2.4.2",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
