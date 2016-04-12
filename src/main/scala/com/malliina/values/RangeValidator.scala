@@ -2,9 +2,6 @@ package com.malliina.values
 
 import play.api.libs.json._
 
-/**
- * @author Michael
- */
 trait RangeValidator[T, U] extends ValueValidator[T, U] {
   def empty = build(Default)
 

@@ -14,9 +14,6 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-/**
- * @author Michael
- */
 abstract class SocketClient[T](uri: String,
                                sslContext: Option[SSLContext],
                                additionalHeaders: (String, String)*) extends WebSocketBase[T] {
@@ -43,12 +40,12 @@ abstract class SocketClient[T](uri: String,
     }
 
     /**
-     *
-     * @param code 1000 if the client disconnects normally, 1006 if the server dies abnormally
-     * @param reason
-     * @param remote
-     * @see http://tools.ietf.org/html/rfc6455#section-7.4.1
-     */
+      *
+      * @param code 1000 if the client disconnects normally, 1006 if the server dies abnormally
+      * @param reason
+      * @param remote
+      * @see http://tools.ietf.org/html/rfc6455#section-7.4.1
+      */
     def onClose(code: Int, reason: String, remote: Boolean) {
       //      log info s"Closed websocket to: $uri, code: $code, reason: $reason, remote: $remote"
       connectPromise tryFailure new NotConnectedException(s"The websocket was closed. Code: $code, reason: $reason.")
@@ -58,11 +55,10 @@ abstract class SocketClient[T](uri: String,
       subject.onCompleted()
     }
 
-    /**
-     * Exceptions thrown in this handler like in onMessage end up here.
-     *
-     * If the connection attempt fails, this is called with a [[java.net.ConnectException]].
-     */
+    /** Exceptions thrown in this handler like in onMessage end up here.
+      *
+      * If the connection attempt fails, this is called with a [[java.net.ConnectException]].
+      */
     def onError(ex: Exception) {
       //      log.warn("WebSocket error", ex)
       connectPromise tryFailure ex
@@ -77,13 +73,12 @@ abstract class SocketClient[T](uri: String,
     })
   }
 
-  /**
-   * Only call this method once per instance.
-   *
-   * Impl: On subsequent calls, the returned future will always be completed regardless of connection result
-   *
-   * @return a [[Future]] that completes successfully when the connection has been established or fails otherwise
-   */
+  /** Only call this method once per instance.
+    *
+    * Impl: On subsequent calls, the returned future will always be completed regardless of connection result
+    *
+    * @return a [[Future]] that completes successfully when the connection has been established or fails otherwise
+    */
   def connect(): Future[Unit] = {
     Try(client.connect()) match {
       case Success(()) =>
@@ -101,12 +96,11 @@ abstract class SocketClient[T](uri: String,
 
   def onMessage(json: T) = ()
 
-  /**
-   * Might at least fail with a [[java.nio.channels.NotYetConnectedException]] or [[java.io.IOException]].
-   *
-   * @param json payload
-   * @return
-   */
+  /** Might at least fail with a [[java.nio.channels.NotYetConnectedException]] or [[java.io.IOException]].
+    *
+    * @param json payload
+    * @return
+    */
   override def send(json: T): Try[Unit] = Try {
     client send stringify(json)
   }

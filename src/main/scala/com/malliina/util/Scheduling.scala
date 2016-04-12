@@ -3,10 +3,6 @@ package com.malliina.util
 import java.util.concurrent._
 import scala.concurrent.duration.Duration
 
-/**
- *
- * @author mle
- */
 @deprecated("Use rx or akka")
 class Scheduling(executor: ScheduledExecutorService) {
   def every(interval: Duration)(code: => Unit): ScheduledFuture[_] = {

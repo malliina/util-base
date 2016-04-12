@@ -4,10 +4,6 @@ import java.io.Closeable
 
 import scala.concurrent.duration._
 
-/**
- *
- * @author mle
- */
 object Utils {
   val suppresser: PartialFunction[Throwable, Unit] = {
     case _: Throwable => ()
@@ -24,16 +20,15 @@ object Utils {
       resource.close()
     }
 
-  /**
-   * Performs the given operation on the provided closeable resource after which the resource is closed.
-   *
-   * @see [[com.mle.util.Utils]].using
-   * @param resource the resource to operate on: a file reader, database connection, ...
-   * @param op the operation to perform on the resource: read/write to a file, database, ...
-   * @tparam T closeable resource
-   * @tparam U result of the operation
-   * @return the result of the operation
-   */
+  /** Performs the given operation on the provided closeable resource after which the resource is closed.
+    *
+    * @see [[com.malliina.util.Utils]].using
+    * @param resource the resource to operate on: a file reader, database connection, ...
+    * @param op       the operation to perform on the resource: read/write to a file, database, ...
+    * @tparam T closeable resource
+    * @tparam U result of the operation
+    * @return the result of the operation
+    */
   def resource[T <: {def close()}, U](resource: T)(op: T => U): U =
     try {
       op(resource)
@@ -49,11 +44,10 @@ object Utils {
       case u: U => Left(u)
     }
 
-  /**
-   * Attempts to compute `attempt`, suppressing the specified exception.
-   *
-   * @return attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is thrown
-   */
+  /** Attempts to compute `attempt`, suppressing the specified exception.
+    *
+    * @return attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is thrown
+    */
   def opt[T, U <: Throwable](attempt: => T)(implicit manifest: Manifest[U]): Option[T] =
     toOption(optionally(attempt))
 

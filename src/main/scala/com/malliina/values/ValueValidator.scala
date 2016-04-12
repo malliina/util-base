@@ -1,8 +1,5 @@
 package com.malliina.values
 
-/**
- * @author Michael
- */
 trait ValueValidator[T, U] {
 
   protected def build(t: T): U

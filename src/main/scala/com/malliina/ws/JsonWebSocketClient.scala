@@ -6,10 +6,6 @@ import play.api.libs.json.{JsValue, Json, Writes}
 
 import scala.util.Try
 
-/**
- *
- * @author mle
- */
 class JsonWebSocketClient(uri: String,
                           sslContext: Option[SSLContext],
                           additionalHeaders: (String, String)*)

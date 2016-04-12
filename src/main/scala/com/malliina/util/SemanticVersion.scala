@@ -1,10 +1,7 @@
 package com.malliina.util
 
-/**
- * A partial implementation of http://semver.org/.
- *
- * @author Michael.
- */
+/** A partial implementation of http://semver.org/.
+  */
 case class SemanticVersion(version: String) {
   val (major, minor, patchString) = version.split(".", 3) match {
     case Array(ma, mi, pa) => (ma.toInt, mi.toInt, pa)

@@ -34,8 +34,8 @@ class StorageSize(bytes: Long) {
   def !=(other: StorageSize) = this.toBytes != other.toBytes
 
   /**
-   * @return a string of format 'n units'
-   */
+    * @return a string of format 'n units'
+    */
   override def toString =
     if (toTeras > 10) s"$toTeras terabytes"
     else if (toGigs > 10) s"$toGigs gigabytes"

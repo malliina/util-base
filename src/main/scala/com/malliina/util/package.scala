@@ -3,9 +3,6 @@ package com.malliina
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-/**
- * @author Michael
- */
 package object util {
 
   implicit class TryOps[T](orig: Try[T]) {

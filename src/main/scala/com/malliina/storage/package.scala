@@ -4,8 +4,6 @@ package com.malliina
  * Adapted from concurrent.duration._
  *
  * Enables: 5.megs, 6.gigs etc.
- *
- * @author mle
  */
 package object storage {
   private val k = 1024L
