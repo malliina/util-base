@@ -19,7 +19,6 @@ object UtilBaseBuild {
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-    scalacOptions += "-target:jvm-1.6",
-    licenses +=("MIT", url("http://opensource.org/licenses/MIT"))
+    scalacOptions += "-target:jvm-1.6"
   )
 }
