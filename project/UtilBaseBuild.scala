@@ -3,21 +3,19 @@ import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import sbt.Keys._
 import sbt._
 
-object UtilBaseBuild extends Build {
-  lazy val p = SbtProjects.testableProject("util-base")
+object UtilBaseBuild {
+  lazy val p = SbtProjects.mavenPublishProject("util-base")
     .settings(utilSettings: _*)
-    .enablePlugins(bintray.BintrayPlugin)
 
   lazy val utilSettings = Seq(
-    scalaVersion := "2.11.7",
-    version := "1.0.0",
+    scalaVersion := "2.11.8",
+    version := "1.0.1",
     gitUserName := "malliina",
-    organization := s"com.${gitUserName.value}",
+    organization := "com.malliina",
     developerName := "Michael Skogberg",
-    crossScalaVersions := Seq(scalaVersion.value, "2.10.6"),
     libraryDependencies ++= Seq(
-      "io.reactivex" %% "rxscala" % "0.26.0",
-      "com.typesafe.play" %% "play-json" % "2.5.1",
+      "io.reactivex" %% "rxscala" % "0.26.5",
+      "com.typesafe.play" %% "play-json" % "2.5.10",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),

@@ -3,10 +3,6 @@ package com.malliina.network
 import java.net.{InetAddress, NetworkInterface}
 import collection.JavaConversions._
 
-/**
- *
- * @author mle
- */
 trait NetworkDevice {
   def hostAddresses: Seq[String] = addresses.map(_.getHostAddress)
 

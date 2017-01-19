@@ -19,7 +19,7 @@ abstract class SocketClient[T](uri: String,
                                additionalHeaders: (String, String)*) extends WebSocketBase[T] {
   protected val connectTimeout = 10.seconds
   protected val connectPromise = Promise[Unit]()
-  protected val subject = Subject[T]()
+  protected val subject: Subject[T] = Subject[T]().toSerialized
   val headers: java.util.Map[String, String] = Map.empty[String, String] ++ additionalHeaders.toMap
 
   protected def parse(raw: String): Option[T]
@@ -67,10 +67,10 @@ abstract class SocketClient[T](uri: String,
     }
   }
   if (uri startsWith "wss") {
-    sslContext.foreach(ctx => {
+    sslContext foreach { ctx =>
       val factory = new DefaultSSLWebSocketClientFactory(ctx)
       client setWebSocketFactory factory
-    })
+    }
   }
 
   /** Only call this method once per instance.
@@ -89,10 +89,10 @@ abstract class SocketClient[T](uri: String,
     }
   }
 
-  def onRawMessage(raw: String) = parse(raw).foreach(msg => {
+  def onRawMessage(raw: String) = parse(raw).foreach { msg =>
     onMessage(msg)
     subject onNext msg
-  })
+  }
 
   def onMessage(json: T) = ()
 

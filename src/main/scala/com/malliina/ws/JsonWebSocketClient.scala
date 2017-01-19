@@ -11,7 +11,7 @@ class JsonWebSocketClient(uri: String,
                           additionalHeaders: (String, String)*)
   extends SocketClient[JsValue](uri, sslContext, additionalHeaders: _*) {
 
-  def sendMessage[T](message: T)(implicit writer: Writes[T]): Try[Unit] = send(Json toJson message)
+  def sendMessage[T: Writes](message: T): Try[Unit] = send(Json toJson message)
 
   override protected def parse(raw: String): Option[JsValue] = Try(Json parse raw).toOption
 
