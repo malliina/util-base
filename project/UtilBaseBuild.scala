@@ -4,19 +4,26 @@ import sbt.Keys._
 import sbt._
 
 object UtilBaseBuild {
-  lazy val p = SbtProjects.mavenPublishProject("util-base")
+  lazy val utilBase = SbtProjects.mavenPublishProject("util-base")
     .settings(utilSettings: _*)
 
   lazy val utilSettings = Seq(
     scalaVersion := "2.11.8",
+    crossScalaVersions := Seq("2.10.6", scalaVersion.value),
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
       "io.reactivex" %% "rxscala" % "0.26.5",
-      "com.typesafe.play" %% "play-json" % "2.5.10",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0"
     ),
+    libraryDependencies += {
+      val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, minor)) if minor >= 11 => "2.5.12"
+        case _ => "2.4.10"
+      }
+      "com.typesafe.play" %% "play-json" % playJsonVersion
+    },
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6"
   )

@@ -1,1 +1,1 @@
-lazy val p = UtilBaseBuild.p
+lazy val p = UtilBaseBuild.utilBase
