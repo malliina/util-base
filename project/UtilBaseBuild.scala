@@ -2,6 +2,7 @@ import com.malliina.sbtutils.SbtProjects
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import sbt.Keys._
 import sbt._
+import sbtrelease.ReleasePlugin.autoImport.releaseCrossBuild
 
 object UtilBaseBuild {
   lazy val utilBase = SbtProjects.mavenPublishProject("util-base")
@@ -10,6 +11,7 @@ object UtilBaseBuild {
   lazy val utilSettings = Seq(
     scalaVersion := "2.11.8",
     crossScalaVersions := Seq("2.10.6", scalaVersion.value),
+    releaseCrossBuild := true,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
