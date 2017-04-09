@@ -21,7 +21,7 @@ object UtilBaseBuild {
     ),
     libraryDependencies += {
       val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, minor)) if minor >= 11 => "2.5.12"
+        case Some((2, minor)) if minor >= 11 => "2.5.14"
         case _ => "2.4.10"
       }
       "com.typesafe.play" %% "play-json" % playJsonVersion
