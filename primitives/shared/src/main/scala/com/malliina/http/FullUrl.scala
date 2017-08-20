@@ -15,6 +15,8 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
 
   def append(more: String): FullUrl = FullUrl(proto, hostAndPort, s"$uri$more")
 
+  def withUri(uri: String) = FullUrl(proto, hostAndPort, uri)
+
   override def toString: String = url
 }
 
