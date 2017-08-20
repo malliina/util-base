@@ -1,7 +1,7 @@
 package com.malliina.storage
 
 import play.api.libs.json.Json.toJson
-import play.api.libs.json.{Format, Reads}
+import play.api.libs.json.{Format, Reads, Writes}
 
 class StorageSize(bytes: Long) {
   private val k = 1024
@@ -52,6 +52,6 @@ object StorageSize {
 
   implicit val json: Format[StorageSize] = Format[StorageSize](
     Reads(_.validate[Long].map(_.bytes)),
-    size => toJson(size.toBytes)
+    Writes(size => toJson(size.toBytes))
   )
 }
