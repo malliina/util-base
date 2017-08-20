@@ -13,6 +13,7 @@ lazy val primitivesJvm = primitives.jvm
 lazy val primitivesJs = primitives.js
 
 lazy val basicSettings = Seq(
+  releaseCrossBuild := true,
   scalaVersion := "2.12.3",
   crossScalaVersions := Seq("2.10.6", "2.11.11", scalaVersion.value),
   gitUserName := "malliina",
@@ -26,7 +27,6 @@ lazy val rootSettings = basicSettings ++ Seq(
 )
 
 lazy val moduleSettings = basicSettings ++ Seq(
-  releaseCrossBuild := true,
   libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.3",
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
