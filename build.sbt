@@ -8,7 +8,7 @@ lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
   .dependsOn(primitivesJvm)
 lazy val primitives = crossProject.in(file("primitives"))
-  .settings(crossSettings)
+  .settings(moduleSettings)
 lazy val primitivesJvm = primitives.jvm
 lazy val primitivesJs = primitives.js
 
@@ -26,13 +26,11 @@ lazy val rootSettings = basicSettings ++ Seq(
   publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 )
 
-lazy val moduleSettings = basicSettings ++ Seq(
+lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
   libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.3",
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )
-
-lazy val crossSettings = SbtUtils.mavenSettings ++ moduleSettings
 
 lazy val utilBaseSettings = moduleSettings ++ Seq(
   libraryDependencies ++= Seq(
