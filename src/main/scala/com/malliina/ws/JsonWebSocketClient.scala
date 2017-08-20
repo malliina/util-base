@@ -2,14 +2,15 @@ package com.malliina.ws
 
 import javax.net.ssl.SSLContext
 
+import com.malliina.http.FullUrl
 import play.api.libs.json.{JsValue, Json, Writes}
 
 import scala.util.Try
 
-class JsonWebSocketClient(uri: String,
+class JsonWebSocketClient(uri: FullUrl,
                           sslContext: Option[SSLContext],
-                          additionalHeaders: (String, String)*)
-  extends SocketClient[JsValue](uri, sslContext, additionalHeaders: _*) {
+                          additionalHeaders: Map[String, String])
+  extends SocketClient[JsValue](uri, sslContext, additionalHeaders) {
 
   def sendMessage[T: Writes](message: T): Try[Unit] = send(Json toJson message)
 

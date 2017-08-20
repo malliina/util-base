@@ -11,14 +11,10 @@ organization := "com.malliina"
 developerName := "Michael Skogberg"
 libraryDependencies ++= Seq(
   "io.reactivex" %% "rxscala" % "0.26.5",
-  "org.java-websocket" % "Java-WebSocket" % "1.3.0"
+  "com.neovisionaries" % "nv-websocket-client" % "2.3"
 )
 libraryDependencies += {
-  val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, minor)) if minor >= 11 => "2.6.2"
-    case _ => "2.4.10"
-  }
-  "com.typesafe.play" %% "play-json" % playJsonVersion
+  "com.typesafe.play" %% "play-json" % "2.6.3"
 }
 javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
 scalacOptions += "-target:jvm-1.6"

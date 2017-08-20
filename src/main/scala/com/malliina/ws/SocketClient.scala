@@ -1,26 +1,74 @@
 package com.malliina.ws
 
 import java.net.URI
+import java.util
 import javax.net.ssl.SSLContext
 
-import com.malliina.concurrent.{ExecutionContexts, Futures}
-import org.java_websocket.client.{DefaultSSLWebSocketClientFactory, WebSocketClient}
-import org.java_websocket.drafts.Draft_10
-import org.java_websocket.handshake.ServerHandshake
+import com.malliina.http.FullUrl
+import com.neovisionaries.ws.client._
 import rx.lang.scala.{Observable, Subject}
 
-import scala.collection.JavaConversions._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-abstract class SocketClient[T](uri: String,
-                               sslContext: Option[SSLContext],
-                               additionalHeaders: (String, String)*) extends WebSocketBase[T] {
+object SocketClient {
+  def factoryFor(sslContext: Option[SSLContext]): WebSocketFactory = {
+    val factory = new WebSocketFactory
+    sslContext foreach { ctx => factory setSSLContext ctx }
+    factory
+  }
+}
+abstract class SocketClient[T](val uri: FullUrl,
+                               val factory: WebSocketFactory,
+                               additionalHeaders: Map[String, String]) extends WebSocketBase[T] {
+  def this(uri: FullUrl, sslContext: Option[SSLContext], headers: Map[String, String]) =
+    this(uri, SocketClient.factoryFor(sslContext), headers)
+
   protected val connectTimeout = 10.seconds
   protected val connectPromise = Promise[Unit]()
   protected val subject: Subject[T] = Subject[T]().toSerialized
-  val headers: java.util.Map[String, String] = Map.empty[String, String] ++ additionalHeaders.toMap
+
+  val socket = factory.createSocket(uri.url, connectTimeout.toMillis.toInt)
+  additionalHeaders foreach {
+    case (key, value) => socket.addHeader(key, value)
+  }
+  socket.addListener(new WebSocketAdapter {
+    override def onConnected(websocket: WebSocket, headers: util.Map[String, util.List[String]]): Unit = {
+      connectPromise.trySuccess(())
+      SocketClient.this.onConnect(websocket.getURI)
+    }
+
+    override def onTextMessage(websocket: WebSocket, text: String): Unit = {
+      SocketClient.this.onRawMessage(text)
+    }
+
+    override def onDisconnected(websocket: WebSocket,
+                                serverCloseFrame: WebSocketFrame,
+                                clientCloseFrame: WebSocketFrame,
+                                closedByServer: Boolean): Unit = {
+      val uri = websocket.getURI
+      val suffix = if (closedByServer) " by the server" else ""
+      connectPromise tryFailure new NotConnectedException(s"The websocket to $uri was closed$suffix.")
+      SocketClient.this.onClose()
+      subject.onCompleted()
+    }
+
+    override def onError(websocket: WebSocket, cause: WebSocketException): Unit = {
+      //      log.error(s"Websocket error for ${websocket.getURI.toString}", cause)
+      connectPromise tryFailure cause
+      SocketClient.this.onError(cause)
+      subject.onError(cause)
+    }
+  })
+
+  def onConnect(uri: URI): Unit = ()
+
+  def onMessage(json: T) = ()
+
+  override def onClose(): Unit = ()
+
+  override def onError(t: Exception): Unit = ()
 
   protected def parse(raw: String): Option[T]
 
@@ -28,61 +76,16 @@ abstract class SocketClient[T](uri: String,
 
   def messages: Observable[T] = subject
 
-  val client = new WebSocketClient(URI create uri, new Draft_10, headers, 0) {
-    def onOpen(handshakedata: ServerHandshake) {
-      //      log info s"Opened websocket to: $uri"
-      connectPromise.trySuccess(())
-      //      subject onNext SocketConnected
-    }
-
-    def onMessage(message: String): Unit = {
-      SocketClient.this.onRawMessage(message)
-    }
-
-    /**
-      *
-      * @param code 1000 if the client disconnects normally, 1006 if the server dies abnormally
-      * @param reason
-      * @param remote
-      * @see http://tools.ietf.org/html/rfc6455#section-7.4.1
-      */
-    def onClose(code: Int, reason: String, remote: Boolean) {
-      //      log info s"Closed websocket to: $uri, code: $code, reason: $reason, remote: $remote"
-      connectPromise tryFailure new NotConnectedException(s"The websocket was closed. Code: $code, reason: $reason.")
-      SocketClient.this.onClose()
-      //      eventsSubject onNext Disconnected
-      // not sure if I should do this; the connect() docs says it "maintains" a connection?
-      subject.onCompleted()
-    }
-
-    /** Exceptions thrown in this handler like in onMessage end up here.
-      *
-      * If the connection attempt fails, this is called with a [[java.net.ConnectException]].
-      */
-    def onError(ex: Exception) {
-      //      log.warn("WebSocket error", ex)
-      connectPromise tryFailure ex
-      SocketClient.this.onError(ex)
-      subject onError ex
-    }
-  }
-  if (uri startsWith "wss") {
-    sslContext foreach { ctx =>
-      val factory = new DefaultSSLWebSocketClientFactory(ctx)
-      client setWebSocketFactory factory
-    }
-  }
-
   /** Only call this method once per instance.
     *
     * Impl: On subsequent calls, the returned future will always be completed regardless of connection result
     *
     * @return a [[Future]] that completes successfully when the connection has been established or fails otherwise
     */
-  def connect(): Future[Unit] = {
-    Try(client.connect()) match {
-      case Success(()) =>
-        Futures.within(connectTimeout)(connectPromise.future)(ExecutionContexts.cached)
+  override def connect(): Future[Unit] = {
+    Try(socket.connectAsynchronously()) match {
+      case Success(_) =>
+        connectPromise.future
       case Failure(t) =>
         connectPromise tryFailure t
         connectPromise.future
@@ -94,22 +97,13 @@ abstract class SocketClient[T](uri: String,
     subject onNext msg
   }
 
-  def onMessage(json: T) = ()
-
-  /** Might at least fail with a [[java.nio.channels.NotYetConnectedException]] or [[java.io.IOException]].
-    *
+  /**
     * @param json payload
     * @return
     */
-  override def send(json: T): Try[Unit] = Try {
-    client send stringify(json)
-  }
+  override def send(json: T): Try[Unit] = Try(socket.sendText(stringify(json)))
 
-  def isConnected = client.getConnection.isOpen
+  def isConnected = socket.isOpen
 
-  def close(): Unit = client.close()
-
-  override def onClose(): Unit = ()
-
-  override def onError(t: Exception): Unit = ()
+  def close(): Unit = socket.disconnect()
 }
