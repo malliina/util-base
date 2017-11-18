@@ -4,6 +4,7 @@ import com.malliina.sbtutils.{SbtProjects, SbtUtils}
 lazy val root = project.in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)
   .settings(rootSettings)
+  .disablePlugins(BintrayPlugin)
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
   .dependsOn(primitivesJvm)
