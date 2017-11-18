@@ -7,13 +7,18 @@ lazy val root = project.in(file("."))
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
   .dependsOn(primitivesJvm)
+  .disablePlugins(BintrayPlugin)
 lazy val primitives = crossProject.in(file("primitives"))
   .settings(moduleSettings)
+  .disablePlugins(BintrayPlugin)
 lazy val primitivesJvm = primitives.jvm
+  .disablePlugins(BintrayPlugin)
 lazy val primitivesJs = primitives.js
+  .disablePlugins(BintrayPlugin)
 lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
   .settings(okClientSettings)
   .dependsOn(primitivesJvm)
+  .disablePlugins(BintrayPlugin)
 
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
