@@ -2,7 +2,7 @@ import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import com.malliina.sbtutils.{SbtProjects, SbtUtils}
 
 lazy val root = project.in(file("."))
-  .aggregate(utilBase, primitivesJvm, primitivesJs)
+  .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)
   .settings(rootSettings)
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
@@ -11,10 +11,13 @@ lazy val primitives = crossProject.in(file("primitives"))
   .settings(moduleSettings)
 lazy val primitivesJvm = primitives.jvm
 lazy val primitivesJs = primitives.js
+lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
+  .settings(okClientSettings)
+  .dependsOn(primitivesJvm)
 
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
   crossScalaVersions := Seq("2.10.6", "2.11.11", scalaVersion.value),
   gitUserName := "malliina",
   organization := "com.malliina",
@@ -27,7 +30,7 @@ lazy val rootSettings = basicSettings ++ Seq(
 )
 
 lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.3",
+  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.7",
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )
@@ -37,4 +40,8 @@ lazy val utilBaseSettings = moduleSettings ++ Seq(
     "io.reactivex" %% "rxscala" % "0.26.5",
     "com.neovisionaries" % "nv-websocket-client" % "2.3"
   )
+)
+
+lazy val okClientSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
+  libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.9.0"
 )
