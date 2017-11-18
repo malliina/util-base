@@ -3,12 +3,12 @@ package com.malliina.http
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util
 import javax.net.ssl.{SSLSocketFactory, X509TrustManager}
 
 import okhttp3._
 import play.api.libs.json.{JsValue, Json}
 
-import scala.collection.JavaConverters.seqAsJavaList
 import scala.concurrent.{Future, Promise}
 
 object OkClient {
@@ -22,13 +22,13 @@ object OkClient {
   def apply(client: OkHttpClient): OkClient = new OkClient(client)
 
   def okHttpClient: OkHttpClient = new OkHttpClient.Builder()
-    .protocols(seqAsJavaList(List(Protocol.HTTP_2, Protocol.HTTP_1_1)))
+    .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
     .build()
 
   def sslClient(ssf: SSLSocketFactory, tm: X509TrustManager): OkHttpClient =
     new OkHttpClient.Builder()
       .sslSocketFactory(ssf, tm)
-      .protocols(seqAsJavaList(List(Protocol.HTTP_2, Protocol.HTTP_1_1)))
+      .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
       .build()
 }
 
