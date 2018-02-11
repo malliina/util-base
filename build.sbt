@@ -4,22 +4,16 @@ import com.malliina.sbtutils.{SbtProjects, SbtUtils}
 lazy val root = project.in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)
   .settings(rootSettings)
-  .disablePlugins(BintrayPlugin)
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
   .dependsOn(primitivesJvm)
-  .disablePlugins(BintrayPlugin)
 lazy val primitives = crossProject.in(file("primitives"))
   .settings(moduleSettings)
-  .disablePlugins(BintrayPlugin)
 lazy val primitivesJvm = primitives.jvm
-  .disablePlugins(BintrayPlugin)
 lazy val primitivesJs = primitives.js
-  .disablePlugins(BintrayPlugin)
 lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
   .settings(okClientSettings)
   .dependsOn(primitivesJvm)
-  .disablePlugins(BintrayPlugin)
 
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
@@ -36,7 +30,7 @@ lazy val rootSettings = basicSettings ++ Seq(
 )
 
 lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.7",
+  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.8",
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )
@@ -49,5 +43,5 @@ lazy val utilBaseSettings = moduleSettings ++ Seq(
 )
 
 lazy val okClientSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.9.0"
+  libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.9.1"
 )
