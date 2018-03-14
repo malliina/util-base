@@ -18,7 +18,7 @@ lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
   scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.10.6", "2.11.11", scalaVersion.value),
+  crossScalaVersions := Seq(scalaVersion.value),
   gitUserName := "malliina",
   organization := "com.malliina",
   developerName := "Michael Skogberg"
@@ -30,7 +30,7 @@ lazy val rootSettings = basicSettings ++ Seq(
 )
 
 lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.8",
+  libraryDependencies += "com.typesafe.play" %%% "play-json" % "2.6.9",
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )
@@ -43,5 +43,5 @@ lazy val utilBaseSettings = moduleSettings ++ Seq(
 )
 
 lazy val okClientSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.9.1"
+  libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.10.0"
 )

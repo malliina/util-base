@@ -9,7 +9,10 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
   val protoAndHost = s"$proto://$hostAndPort"
   val url = s"$protoAndHost$uri"
 
-  def /(more: String) = append(more.dropWhile(_ == '/'))
+  def /(more: String): FullUrl = {
+    if (uri.endsWith("/")) append(more.dropWhile(_ == '/'))
+    else append(if (more.startsWith("/")) more else s"/$more")
+  }
 
   def +(more: String) = append(more)
 
@@ -17,11 +20,28 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
 
   def withUri(uri: String) = FullUrl(proto, hostAndPort, uri)
 
+  def withQuery(qs: (String, String)*) = {
+    val asString = qs.map { case (k, v) => s"$k=$v" }.mkString("&")
+    val firstChar = if (uri.contains("?")) "&" else "?"
+    append(s"$firstChar$asString")
+  }
+
   override def toString: String = url
 }
 
 object FullUrl extends ValidatingCompanion[String, FullUrl] {
   val urlPattern = Pattern compile """(.+)://([^/]+)(/?.*)"""
+
+  def https(domain: String, uri: String): FullUrl =
+    FullUrl("https", dropHttps(domain), uri)
+
+  def host(domain: String): FullUrl =
+    FullUrl("https", dropHttps(domain), "")
+
+  private def dropHttps(domain: String) = {
+    val prefix = "https://"
+    if (domain.startsWith(prefix)) domain.drop(prefix.length) else domain
+  }
 
   override def write(t: FullUrl) = t.url
 
