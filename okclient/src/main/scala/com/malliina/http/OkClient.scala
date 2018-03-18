@@ -42,12 +42,14 @@ object OkClient {
 class OkClient(val client: OkHttpClient, ec: ExecutionContext) {
   implicit val exec = ec
 
-  def getJson[T: Reads](url: FullUrl): OkResponse[T] =
-    get(url).map(r => parse[T](r, url))
+  def getJson[T: Reads](url: FullUrl, headers: Map[String, String] = Map.empty): OkResponse[T] =
+    get(url, headers).map(r => parse[T](r, url))
 
-  def get(url: FullUrl): Future[OkHttpResponse] = {
-    val req = new Request.Builder().url(url.url).get().build()
-    execute(req)
+  def get(url: FullUrl, headers: Map[String, String] = Map.empty): Future[OkHttpResponse] = {
+    val req = headers.foldLeft(new Request.Builder().url(url.url)) {
+      case (r, (key, value)) => r.addHeader(key, value)
+    }
+    execute(req.get().build())
   }
 
   def postJsonAs[T: Reads](url: FullUrl,
