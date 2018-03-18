@@ -22,19 +22,10 @@ package object concurrent {
       fut.map(predicate).recoverAll(_ => false)
 
     def isDefined(implicit ec: ExecutionContext) = fut.exists(_ => true)
-
-    /** The following doesn't compile:
-      * f.recoverFrom[IllegalArgumentException, Int](iae => 42)
-      * Why not?
-      */
-    //    def recoverFrom[E <: Throwable, U >: T](fix: E => U)(implicit executor: ExecutionContext, manifest: Manifest[E]): Future[U] =
-    //      fut.recover {
-    //        case e: E => fix(e)
-    //      }
   }
 
   implicit class PromiseOps[T](p: Promise[T]) {
-    /** Tries to fail this [[Promise]] with a [[concurrent.TimeoutException]] after `to`.
+    /** Tries to fail this [[Promise]] with a [[scala.concurrent.TimeoutException]] after `to`.
       *
       * @param to timeout
       */

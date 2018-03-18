@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import java.io.IOException
+import java.io.{Closeable, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util
@@ -39,7 +39,7 @@ object OkClient {
     ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 }
 
-class OkClient(val client: OkHttpClient, ec: ExecutionContext) {
+class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable {
   implicit val exec = ec
 
   def getJson[T: Reads](url: FullUrl, headers: Map[String, String] = Map.empty): OkResponse[T] =
@@ -99,6 +99,12 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) {
     val (future, callback) = PromisingCallback.paired()
     client.newCall(request).enqueue(callback)
     future
+  }
+
+  override def close(): Unit = {
+    client.dispatcher().executorService().shutdown()
+    client.connectionPool().evictAll()
+    Option(client.cache()).foreach(_.close())
   }
 }
 
