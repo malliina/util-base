@@ -1,7 +1,7 @@
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import com.malliina.sbtutils.{SbtProjects, SbtUtils}
 
-lazy val root = project.in(file("."))
+lazy val utilBaseRoot = project.in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)
   .settings(rootSettings)
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
