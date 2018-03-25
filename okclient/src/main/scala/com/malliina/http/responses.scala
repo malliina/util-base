@@ -5,6 +5,10 @@ import play.api.libs.json.{JsError, JsValue, Json, Reads}
 
 import scala.util.Try
 
+object OkHttpResponse {
+  def apply(response: Response): OkHttpResponse = new OkHttpResponse(response)
+}
+
 class OkHttpResponse(val inner: Response) extends HttpResponse {
   override val asString = inner.body().string()
 
@@ -29,10 +33,14 @@ trait HttpResponse {
   def isSuccess = code >= 200 && code < 400
 }
 
-trait ResponseError
+sealed trait ResponseError {
+  def url: FullUrl
 
-case class StatusError(response: OkHttpResponse, url: FullUrl) extends ResponseError {
-  def code = response.code
+  def response: OkHttpResponse
+
+  def code: Int = response.code
 }
+
+case class StatusError(response: OkHttpResponse, url: FullUrl) extends ResponseError
 
 case class JsonError(error: JsError, response: OkHttpResponse, url: FullUrl) extends ResponseError

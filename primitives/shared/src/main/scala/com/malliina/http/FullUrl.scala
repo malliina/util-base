@@ -1,5 +1,6 @@
 package com.malliina.http
 
+import java.net.URLEncoder
 import java.util.regex.Pattern
 
 import com.malliina.values.{ErrorMessage, ValidatingCompanion}
@@ -24,6 +25,11 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     val asString = qs.map { case (k, v) => s"$k=$v" }.mkString("&")
     val firstChar = if (uri.contains("?")) "&" else "?"
     append(s"$firstChar$asString")
+  }
+
+  def query(map: Map[String, String]) = {
+    val encoded = map.mapValues(v => URLEncoder.encode(v, "UTF-8"))
+    withQuery(encoded.toSeq: _*)
   }
 
   override def toString: String = url
