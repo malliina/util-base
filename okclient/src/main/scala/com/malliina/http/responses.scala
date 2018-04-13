@@ -15,7 +15,7 @@ class OkHttpResponse(val inner: Response) extends HttpResponse {
 
   def code: Int = inner.code()
 
-  override def headers: Map[String, Seq[String]] =
+  def headers: Map[String, Seq[String]] =
     inner.headers().toMultimap.asScala.toMap.mapValues(_.asScala)
 }
 
@@ -37,9 +37,7 @@ trait HttpResponse {
   def parse[T: Reads]: Either[JsError, T] =
     json.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
 
-
-  def isSuccess = code >= 200 && code < 300
-
+  def isSuccess: Boolean = code >= 200 && code < 300
 }
 
 sealed trait ResponseError {

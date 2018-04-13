@@ -21,15 +21,20 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
 
   def withUri(uri: String) = FullUrl(proto, hostAndPort, uri)
 
-  def withQuery(qs: (String, String)*) = {
+  /** URL encodes the values in `map`, and adds them to the query string.
+    *
+    * @param map query string values
+    * @return a new URL with the query strings applied
+    */
+  def query(map: Map[String, String]): FullUrl = {
+    val encoded = map.mapValues(v => URLEncoder.encode(v, "UTF-8"))
+    withQuery(encoded.toSeq: _*)
+  }
+  
+  def withQuery(qs: (String, String)*): FullUrl = {
     val asString = qs.map { case (k, v) => s"$k=$v" }.mkString("&")
     val firstChar = if (uri.contains("?")) "&" else "?"
     append(s"$firstChar$asString")
-  }
-
-  def query(map: Map[String, String]) = {
-    val encoded = map.mapValues(v => URLEncoder.encode(v, "UTF-8"))
-    withQuery(encoded.toSeq: _*)
   }
 
   override def toString: String = url
@@ -43,6 +48,12 @@ object FullUrl extends ValidatingCompanion[String, FullUrl] {
 
   def host(domain: String): FullUrl =
     FullUrl("https", dropHttps(domain), "")
+
+  def ws(domain: String, uri: String): FullUrl =
+    FullUrl("ws", domain, uri)
+
+  def wss(domain: String, uri: String): FullUrl =
+    FullUrl("wss", domain, uri)
 
   private def dropHttps(domain: String) = {
     val prefix = "https://"
