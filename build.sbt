@@ -17,8 +17,7 @@ lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
 
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq(scalaVersion.value),
+  scalaVersion := "2.12.5",
   gitUserName := "malliina",
   organization := "com.malliina",
   developerName := "Michael Skogberg"

@@ -85,7 +85,7 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
   def postJson(url: FullUrl,
                json: JsValue,
                headers: Map[String, String] = Map.empty): Future[OkHttpResponse] =
-    post(url, RequestBody.create(OkClient.jsonMediaType, Json.stringify(json)), Map.empty)
+    post(url, RequestBody.create(OkClient.jsonMediaType, Json.stringify(json)), headers)
 
   def postFile(url: FullUrl,
                mediaType: MediaType,
