@@ -1,5 +1,6 @@
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import com.malliina.sbtutils.{SbtProjects, SbtUtils}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
 lazy val utilBaseRoot = project.in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)
@@ -7,7 +8,9 @@ lazy val utilBaseRoot = project.in(file("."))
 lazy val utilBase = SbtProjects.testableProject("util-base", file("util-base"))
   .settings(utilBaseSettings)
   .dependsOn(primitivesJvm)
-lazy val primitives = crossProject.in(file("primitives"))
+lazy val primitives = portableProject(JSPlatform, JVMPlatform)
+  .crossType(PortableType.Full)
+  .in(file("primitives"))
   .settings(moduleSettings)
 lazy val primitivesJvm = primitives.jvm
 lazy val primitivesJs = primitives.js
@@ -17,7 +20,7 @@ lazy val okClient = SbtProjects.testableProject("okclient", file("okclient"))
 
 lazy val basicSettings = Seq(
   releaseCrossBuild := true,
-  scalaVersion := "2.12.5",
+  scalaVersion := "2.12.6",
   gitUserName := "malliina",
   organization := "com.malliina",
   developerName := "Michael Skogberg"

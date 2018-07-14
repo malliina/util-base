@@ -12,6 +12,12 @@ abstract class Wrapped(val value: String) {
   override def toString: String = value
 }
 
+trait WrappedId {
+  def id: Long
+
+  override def toString = s"$id"
+}
+
 abstract class WrappedLong(val num: Long) {
   override def toString = s"$num"
 }
@@ -20,18 +26,22 @@ abstract class IdentCompanion[T <: Identifier] extends JsonCompanion[String, T] 
   override def write(t: T): String = t.id
 }
 
+abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
+  override def write(t: T) = t.id
+}
+
 abstract class StringCompanion[T <: Wrapped] extends JsonCompanion[String, T] {
   override def write(t: T) = t.value
 }
 
-abstract class JsonCompanion[Raw: Format, T] extends ValidatingCompanion[Raw, T] {
+abstract class JsonCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw]) extends ValidatingCompanion[Raw, T] {
   def apply(raw: Raw): T
 
   override def build(input: Raw): Either[ErrorMessage, T] =
     Right(apply(input))
 }
 
-abstract class ValidatingCompanion[Raw: Format, T] {
+abstract class ValidatingCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw]) {
   private val reader = Reads[T] { jsValue =>
     jsValue.validate[Raw].flatMap { raw =>
       build(raw).fold(
@@ -43,6 +53,7 @@ abstract class ValidatingCompanion[Raw: Format, T] {
 
   private val writer = Writes[T](t => Json.toJson(write(t)))
   implicit val json = Format[T](reader, writer)
+  implicit val ordering: Ordering[T] = o.on(write)
 
   def build(input: Raw): Either[ErrorMessage, T]
 

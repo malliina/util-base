@@ -7,8 +7,10 @@ import play.api.libs.json.{Format, Reads, Writes}
   *
   * @param millis millimeters
   */
-class Distance(millis: Long) {
+class Distance(millis: Long) extends Ordered[Distance] {
   private val k = 1000
+
+  override def compare(that: Distance): Int = toMillis compare that.toMillis
 
   def toMillis = millis
 
@@ -20,13 +22,9 @@ class Distance(millis: Long) {
 
   def toKilometersDouble = toMetersDouble / k
 
-  def <(other: Distance) = toMillis < other.toMillis
+  def +(other: Distance) = (millis + other.toMillis).millimeters
 
-  def <=(other: Distance) = toMillis <= other.toMillis
-
-  def >(other: Distance) = toMillis > other.toMillis
-
-  def >=(other: Distance) = this.toMillis >= other.toMillis
+  def -(other: Distance) = millis - other.toMillis
 
   def ==(other: Distance) = this.toMillis == other.toMillis
 
@@ -35,14 +33,19 @@ class Distance(millis: Long) {
   /**
     * @return a string of format 'n units'
     */
-  override def toString =
-    if (toKilometers > 10) s"$toKilometers km"
-    else if (toMeters > 10) s"$toMeters m"
+  def short =
+    if (toKilometers >= 10) s"$toKilometers km"
+    else if (toMeters >= 10) s"$toMeters m"
     else s"$toMillis mm"
+
+  /**
+    * @return a string of format 'n units'
+    */
+  override def toString = short
 }
 
 object Distance {
-  val empty = new Distance(0)
+  val zero = new Distance(0)
 
   implicit val json: Format[Distance] = Format[Distance](
     Reads(_.validate[Long].map(_.millimeters)),
