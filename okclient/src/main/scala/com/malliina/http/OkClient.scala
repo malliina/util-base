@@ -24,7 +24,7 @@ object OkClient {
   def ssl(ssf: SSLSocketFactory, tm: X509TrustManager): OkClient =
     apply(sslClient(ssf, tm))
 
-  def apply(client: OkHttpClient): OkClient = new OkClient(client, defaultExecutionContext())
+  def apply(client: OkHttpClient = okHttpClient): OkClient = new OkClient(client, defaultExecutionContext())
 
   def okHttpClient: OkHttpClient = new OkHttpClient.Builder()
     .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
