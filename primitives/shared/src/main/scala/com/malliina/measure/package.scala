@@ -36,6 +36,36 @@ package object measure {
     def kilometers = asDistance(k * k)
   }
 
+  implicit final class DistanceIntM(val amount: Int) extends AnyVal with DistanceConversionsM {
+    protected def asMeters(multiplier: Double): Double = multiplier * amount
+  }
+
+  implicit final class DistanceLongM(val amount: Long) extends AnyVal with DistanceConversionsM {
+    protected def asMeters(multiplier: Double): Double = multiplier * amount
+  }
+
+  implicit final class DistanceDoubleM(val amount: Double) extends AnyVal with DistanceConversionsM {
+    protected def asMeters(multiplier: Double): Double = multiplier * amount
+  }
+
+  trait DistanceConversionsM extends Any {
+    protected def asDistance(multiplier: Double): DistanceM = new DistanceM(asMeters(multiplier))
+
+    protected def asMeters(multiplier: Double): Double
+
+    def mm = millimeters
+
+    def millimeters = asDistance(1.0d / k)
+
+    def m = meters
+
+    def meters = asDistance(1)
+
+    def km = kilometers
+
+    def kilometers = asDistance(k)
+  }
+
   implicit final class SpeedInt(private val amount: Int) extends AnyVal with SpeedConversions {
     protected def asKmh(multiplier: Double): Double = multiplier * amount
   }

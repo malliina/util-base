@@ -40,7 +40,7 @@ lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
 lazy val utilBaseSettings = moduleSettings ++ Seq(
   libraryDependencies ++= Seq(
     "io.reactivex" %% "rxscala" % "0.26.5",
-    "com.neovisionaries" % "nv-websocket-client" % "2.5"
+    "com.neovisionaries" % "nv-websocket-client" % "2.6"
   )
 )
 

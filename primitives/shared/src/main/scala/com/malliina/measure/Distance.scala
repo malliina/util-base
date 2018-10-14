@@ -4,7 +4,6 @@ import play.api.libs.json.Json.toJson
 import play.api.libs.json.{Format, Reads, Writes}
 
 /**
-  *
   * @param millis millimeters
   */
 class Distance(millis: Long) extends Ordered[Distance] {
@@ -22,9 +21,9 @@ class Distance(millis: Long) extends Ordered[Distance] {
 
   def toKilometersDouble = toMetersDouble / k
 
-  def +(other: Distance) = (millis + other.toMillis).millimeters
+  def +(other: Distance) = Distance(millis + other.toMillis)
 
-  def -(other: Distance) = millis - other.toMillis
+  def -(other: Distance) = Distance(millis - other.toMillis)
 
   def ==(other: Distance) = this.toMillis == other.toMillis
 
@@ -47,8 +46,10 @@ class Distance(millis: Long) extends Ordered[Distance] {
 object Distance {
   val zero = new Distance(0)
 
+  def apply(millis: Long): Distance = new Distance(millis)
+
   implicit val json: Format[Distance] = Format[Distance](
-    Reads(_.validate[Long].map(_.millimeters)),
+    Reads(_.validate[Long].map(mm => Distance(mm))),
     Writes(size => toJson(size.toMillis))
   )
 }
