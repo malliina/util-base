@@ -3,6 +3,7 @@ package com.malliina.util
 import java.io.Closeable
 
 import scala.concurrent.duration._
+import scala.language.reflectiveCalls
 
 object Utils {
   val suppresser: PartialFunction[Throwable, Unit] = {
@@ -49,11 +50,7 @@ object Utils {
     * @return attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is thrown
     */
   def opt[T, U <: Throwable](attempt: => T)(implicit manifest: Manifest[U]): Option[T] =
-    toOption(optionally(attempt))
-
-  def toOption[T, U](either: Either[U, T]) =
-    if (either.isRight) Some(either.right.get)
-    else None
+    optionally(attempt).toOption
 
   def timed[T](f: => T): (T, Duration) = {
     val start = System.currentTimeMillis()
