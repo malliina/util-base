@@ -1,11 +1,11 @@
 package com.mle.ws
 
 import java.net.URI
-import javax.net.ssl.SSLContext
 
 import com.mle.concurrent.{ExecutionContexts, Futures}
-import org.java_websocket.client.{DefaultSSLWebSocketClientFactory, WebSocketClient}
-import org.java_websocket.drafts.Draft_10
+import javax.net.ssl.SSLContext
+import org.java_websocket.client.WebSocketClient
+import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ServerHandshake
 import rx.lang.scala.{Observable, Subject}
 
@@ -14,9 +14,6 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-/**
- * @author Michael
- */
 abstract class SocketClient[T](uri: String,
                                sslContext: Option[SSLContext],
                                additionalHeaders: (String, String)*) extends WebSocketBase[T] {
@@ -31,7 +28,7 @@ abstract class SocketClient[T](uri: String,
 
   def messages: Observable[T] = subject
 
-  val client = new WebSocketClient(URI create uri, new Draft_10, headers, 0) {
+  val client = new WebSocketClient(URI create uri, new Draft_6455(), headers, 0) {
     def onOpen(handshakedata: ServerHandshake) {
       //      log info s"Opened websocket to: $uri"
       connectPromise.trySuccess(())
@@ -69,12 +66,6 @@ abstract class SocketClient[T](uri: String,
       SocketClient.this.onError(ex)
       subject onError ex
     }
-  }
-  if (uri startsWith "wss") {
-    sslContext.foreach(ctx => {
-      val factory = new DefaultSSLWebSocketClientFactory(ctx)
-      client setWebSocketFactory factory
-    })
   }
 
   /**

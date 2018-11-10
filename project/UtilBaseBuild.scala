@@ -8,14 +8,14 @@ object UtilBaseBuild extends Build {
 
   lazy val utilSettings = bintraySettings ++ Seq(
     scalaVersion := "2.11.6",
-    version := "0.6.2",
+    version := "0.6.200",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     crossScalaVersions := Seq(scalaVersion.value, "2.10.4"),
     libraryDependencies ++= Seq(
       "io.reactivex" %% "rxscala" % "0.24.0",
       "com.typesafe.play" %% "play-json" % "2.3.8",
-      "org.java-websocket" % "Java-WebSocket" % "1.3.0"
+      "org.java-websocket" % "Java-WebSocket" % "1.3.9"
     ),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     scalacOptions += "-target:jvm-1.6",
