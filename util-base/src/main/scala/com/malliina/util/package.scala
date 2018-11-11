@@ -11,11 +11,11 @@ package object util {
     }
 
     def recoverAll[U >: T](fix: Throwable => U): Try[U] = orig.recover {
-      case t: Throwable => fix(t)
+      case NonFatal(t) => fix(t)
     }
 
     def recoverWithAll[U >: T](fix: Throwable => Try[U]): Try[U] = orig.recoverWith {
-      case t: Throwable => fix(t)
+      case NonFatal(t) => fix(t)
     }
 
     def fold[U](ifFailure: Throwable => U)(ifSuccess: T => U): U = orig match {

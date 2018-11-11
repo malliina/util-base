@@ -35,7 +35,7 @@ trait HttpResponse {
     Try(Json.parse(asString)).toOption.toRight(JsError(s"Not JSON: '$asString'."))
 
   def parse[T: Reads]: Either[JsError, T] =
-    json.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
+    json.right.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
 
   def isSuccess: Boolean = code >= 200 && code < 300
 }

@@ -2,18 +2,19 @@ package com.malliina
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.control.NonFatal
 
 package object concurrent {
 
   implicit class FutureOps[T](fut: Future[T]) {
     def recoverAll[U >: T](fix: Throwable => U)(implicit ec: ExecutionContext): Future[U] =
       fut.recover {
-        case t: Throwable => fix(t)
+        case NonFatal(t) => fix(t)
       }
 
     def recoverWithAll[U >: T](fix: Throwable => Future[U])(implicit ec: ExecutionContext): Future[U] =
       fut.recoverWith {
-        case t: Throwable => fix(t)
+        case NonFatal(t) => fix(t)
       }
 
     def orElse[U >: T](other: => Future[U])(implicit ec: ExecutionContext) = recoverWithAll(_ => other)

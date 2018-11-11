@@ -50,7 +50,7 @@ object Utils {
     * @return attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is thrown
     */
   def opt[T, U <: Throwable](attempt: => T)(implicit manifest: Manifest[U]): Option[T] =
-    optionally(attempt).toOption
+    optionally(attempt).right.toOption
 
   def timed[T](f: => T): (T, Duration) = {
     val start = System.currentTimeMillis()

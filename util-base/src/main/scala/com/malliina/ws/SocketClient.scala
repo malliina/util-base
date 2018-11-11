@@ -92,7 +92,7 @@ abstract class SocketClient[T](val uri: FullUrl,
     }
   }
 
-  def onRawMessage(raw: String) = parse(raw).foreach { msg =>
+  def onRawMessage(raw: String): Unit = parse(raw).foreach { msg =>
     onMessage(msg)
     subject onNext msg
   }
@@ -103,7 +103,7 @@ abstract class SocketClient[T](val uri: FullUrl,
     */
   override def send(json: T): Try[Unit] = Try(socket.sendText(stringify(json)))
 
-  def isConnected = socket.isOpen
+  def isConnected: Boolean = socket.isOpen
 
   def close(): Unit = socket.disconnect()
 }
