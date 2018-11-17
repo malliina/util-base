@@ -85,13 +85,43 @@ package object measure {
 
     def `m/s` = metersPerSecond
 
-    def metersPerSecond = asSpeed(3.6)
+    def metersPerSecond = asSpeed(Speed.meterPerSecondInKmh)
 
     def kmh = asSpeed(1)
 
     def kn = knots
 
-    def knots = asSpeed(1.852)
+    def knots = asSpeed(Speed.knotInKmh)
+  }
+
+  implicit final class SpeedIntM(private val amount: Int) extends AnyVal with SpeedConversionsM {
+    protected def asMps(multiplier: Double): Double = multiplier * amount
+  }
+
+  implicit final class SpeedLongM(private val amount: Long) extends AnyVal with SpeedConversionsM {
+    protected def asMps(multiplier: Double): Double = multiplier * amount
+  }
+
+  implicit final class SpeedDoubleM(private val amount: Double) extends AnyVal with SpeedConversionsM {
+    protected def asMps(multiplier: Double): Double = multiplier * amount
+  }
+
+  trait SpeedConversionsM extends Any {
+    protected def asSpeed(multiplier: Double): SpeedM = new SpeedM(asMps(multiplier))
+
+    protected def asMps(multiplier: Double): Double
+
+    def `m/s`: SpeedM = metersPerSecond
+
+    def mps = metersPerSecond
+
+    def metersPerSecond = asSpeed(1)
+
+    def kmh = asSpeed(1d / SpeedM.meterPerSecondInKmh)
+
+    def kn = knots
+
+    def knots = asSpeed(1d / SpeedM.meterPerSecondInKmh * SpeedM.knotInKmh)
   }
 
   implicit final class TemperatureInt(private val amount: Int) extends AnyVal with TemperatureConversions {

@@ -20,9 +20,9 @@ class Speed(kmh: Double) extends Ordered[Speed] {
 
   def toMetersPerSecond = kmh / meterPerSecondInKmh
 
-  def +(other: Speed) = (kmh + other.toKmh).kmh
+  def +(other: Speed) = Speed(kmh + other.toKmh)
 
-  def -(other: Speed) = toKmh - other.toKmh
+  def -(other: Speed) = Speed(toKmh - other.toKmh)
 
   def ==(other: Speed) = this.toKmh == other.toKmh
 
@@ -36,6 +36,8 @@ class Speed(kmh: Double) extends Ordered[Speed] {
   def formatKnots = s"$toKnots kn"
 
   override def toString = formatKmh
+
+  def toM = SpeedM(toMetersPerSecond)
 }
 
 object Speed {
@@ -45,14 +47,14 @@ object Speed {
   val meterPerSecondInKmh = 3.6D
 
   val kmhJson: Format[Speed] = Format[Speed](
-    Reads(_.validate[Double].map(_.kmh)),
+    Reads(_.validate[Double].map(kmh => apply(kmh))),
     Writes(size => toJson(size.toKmh))
   )
 
   implicit val knotsJson: Format[Speed] = Format[Speed](
-    Reads(_.validate[Double].map(_.knots)),
+    Reads(_.validate[Double].map(kn => apply(kn * knotInKmh))),
     Writes(size => toJson(size.toKnots))
   )
 
-  def kmh(d: Double): Speed = new Speed(d)
+  def apply(kmh: Double): Speed = new Speed(kmh)
 }

@@ -7,7 +7,7 @@ import play.api.libs.json.{Format, Reads, Writes}
   * @param celsius degrees in Celsius scale
   */
 class Temperature(celsius: Double) extends Ordered[Temperature] {
-  override def compare(that: Temperature): Int = celsius compare that.toCelsius
+  override def compare(that: Temperature): Int = toCelsius compare that.toCelsius
 
   def toCelsius = celsius
 
@@ -15,9 +15,9 @@ class Temperature(celsius: Double) extends Ordered[Temperature] {
 
   def toKelvin = Temperature.celsiusToKelvin(celsius)
 
-  def +(other: Temperature) = (celsius + other.toCelsius).kmh
+  def +(other: Temperature): Temperature = (toCelsius + other.toCelsius).celsius
 
-  def -(other: Temperature) = toCelsius - other.toCelsius
+  def -(other: Temperature): Temperature = (toCelsius - other.toCelsius).celsius
 
   def ==(other: Temperature) = toCelsius == other.toCelsius
 

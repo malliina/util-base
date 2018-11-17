@@ -30,12 +30,15 @@ class Degree(val dd: Double) extends Ordered[Degree] {
 
   def !=(other: Dms): Boolean = this != other.dd
 
+  def absDiff(other: Degree): Double = math.abs(math.abs(dd) - math.abs(other.dd))
+
   def isNegative = dd < 0
 
   override def toString: String = s"$dd"
 }
 
 object Degree {
+  def apply(dd: Double): Degree = new Degree(dd)
 
   /**
     * @see http://www.mathworks.com/help/map/ref/dms2degrees.html?w.mathworks.com
