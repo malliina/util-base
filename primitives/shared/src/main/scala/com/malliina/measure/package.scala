@@ -126,4 +126,19 @@ package object measure {
     protected def fromKelvin(k: Double) = asCelsius(Temperature.kelvinToCelsius(k))
   }
 
+  implicit final class DegreeDouble(private val amount: Double) extends AnyVal with DegreeConversions {
+    def dd = asDegree(amount)
+  }
+
+  implicit final class DegreeInt(private val amount: Int) extends AnyVal with DegreeConversions {
+    def dd = asDegree(amount)
+  }
+
+  implicit final class DegreeLong(private val amount: Long) extends AnyVal with DegreeConversions {
+    def dd = asDegree(amount)
+  }
+
+  trait DegreeConversions extends Any {
+    def asDegree(dd: Double): Degree = new Degree(dd)
+  }
 }

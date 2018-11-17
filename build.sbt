@@ -34,13 +34,16 @@ lazy val rootSettings = basicSettings ++ Seq(
 )
 
 lazy val moduleSettings = SbtUtils.mavenSettings ++ basicSettings ++ Seq(
-  libraryDependencies += {
+  libraryDependencies ++= {
     // Uses play-json 2.3.x on 2.11.x since 2.6.x contains JDK8 dependencies which we don't want on Android
     val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, minor)) if minor > 11 => "2.6.10"
       case _ => "2.3.10"
     }
-    "com.typesafe.play" %% "play-json" % playJsonVersion
+    Seq(
+      "com.typesafe.play" %% "play-json" % playJsonVersion,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
   },
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
