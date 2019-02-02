@@ -34,7 +34,8 @@ abstract class StringCompanion[T <: Wrapped] extends JsonCompanion[String, T] {
   override def write(t: T) = t.value
 }
 
-abstract class JsonCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw]) extends ValidatingCompanion[Raw, T] {
+abstract class JsonCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw])
+    extends ValidatingCompanion[Raw, T] {
   def apply(raw: Raw): T
 
   override def build(input: Raw): Either[ErrorMessage, T] =
@@ -59,5 +60,31 @@ abstract class ValidatingCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[
 
   def write(t: T): Raw
 
-  def defaultError(in: Raw): ErrorMessage = ErrorMessage(s"Invalid input: '$in'.")
+  def defaultError(in: Raw): ErrorMessage =
+    ErrorMessage(s"Invalid input: '$in'.")
+}
+
+abstract class WrappedEnum[T <: Wrapped] extends StringEnumCompanion[T] {
+  override def write(t: T) = t.value
+}
+
+abstract class StringEnumCompanion[T] extends EnumCompanion[String, T] {
+  override def build(input: String): Either[ErrorMessage, T] =
+    all.find(i => write(i).toLowerCase == input.toLowerCase).toRight(defaultError(input))
+}
+
+abstract class EnumCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw])
+    extends ValidatingCompanion[Raw, T] {
+
+  def all: Seq[T]
+
+  def resolveName(item: T): Raw = write(item)
+
+  private def allNames = all.map(write).mkString(", ")
+
+  def build(input: Raw): Either[ErrorMessage, T] =
+    all.find(i => write(i) == input).toRight(defaultError(input))
+
+  override def defaultError(input: Raw) =
+    ErrorMessage(s"Unknown input: '$input'. Must be one of: $allNames.")
 }

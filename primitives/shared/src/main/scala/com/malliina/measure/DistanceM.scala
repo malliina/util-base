@@ -29,7 +29,7 @@ class DistanceM(meters: Double) extends Ordered[DistanceM] {
   /**
     * @return a string of format 'n units'
     */
-  def short =
+  def short: String =
     if (toKilometers >= 10) s"$toKilometers km"
     else if (toMeters >= 10) s"$toMeters m"
     else s"$toMillis mm"
