@@ -29,6 +29,7 @@ val moduleSettings = basicSettings ++ Seq(
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
   .in(file("primitives"))
+  .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
