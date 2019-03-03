@@ -20,12 +20,13 @@ val moduleSettings = basicSettings ++ Seq(
     }
     Seq(
       "com.typesafe.play" %% "play-json" % playJsonVersion,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.6" % Test
     )
   },
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )
+
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
   .in(file("primitives"))
@@ -33,6 +34,7 @@ val primitives = portableProject(JSPlatform, JVMPlatform)
   .settings(moduleSettings)
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
+
 val utilBase = Project("util-base", file("util-base"))
   .dependsOn(primitivesJvm)
   .enablePlugins(MavenCentralPlugin)
@@ -43,13 +45,18 @@ val utilBase = Project("util-base", file("util-base"))
       "com.neovisionaries" % "nv-websocket-client" % "2.6"
     )
   )
+
 val okClient = Project("okclient", file("okclient"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(basicSettings)
   .settings(
-    libraryDependencies += "com.squareup.okhttp3" % "okhttp" % "3.12.1"
+    libraryDependencies ++= Seq(
+      "com.squareup.okhttp3" % "okhttp" % "3.13.1",
+      "org.scalatest" %% "scalatest" % "3.0.6" % Test
+    )
   )
+
 val utilBaseRoot = project
   .in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient)

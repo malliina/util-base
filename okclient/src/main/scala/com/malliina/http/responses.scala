@@ -20,6 +20,7 @@ class OkHttpResponse(val inner: Response) extends HttpResponse {
 }
 
 trait HttpResponse {
+
   /**
     * @return the body as a string
     */
@@ -46,8 +47,15 @@ sealed trait ResponseError {
   def response: OkHttpResponse
 
   def code: Int = response.code
+
+  def toException: ResponseException = new ResponseException(this)
 }
 
 case class StatusError(response: OkHttpResponse, url: FullUrl) extends ResponseError
 
 case class JsonError(error: JsError, response: OkHttpResponse, url: FullUrl) extends ResponseError
+
+class ResponseException(val error: ResponseError)
+    extends Exception(s"Request to '${error.url}' failed. Status ${error.code}.") {
+  def response = error.response
+}
