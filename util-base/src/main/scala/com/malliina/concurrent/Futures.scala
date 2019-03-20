@@ -1,31 +1,21 @@
 package com.malliina.concurrent
 
 import com.malliina.util.Utils
-import rx.lang.scala.Observable
 
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import scala.util.Try
 
 trait Futures {
   def unit[T](elem: T) = Future successful elem
 
-  /** Fails `f` with a [[TimeoutException]] unless it's completed within `timeout`.
-    *
-    * @param timeout duration
-    * @param f       future computation to wrap in a timeout
-    * @tparam T type of result
-    * @return a future which may time out
-    */
-  def within[T](timeout: Duration)(f: Future[T])(implicit executor: ExecutionContext): Future[T] =
-    before(delay2(timeout))(f)
-
-  def before[T, TO](other: Future[TO])(f: Future[T])(implicit executor: ExecutionContext): Future[T] =
+  def before[T, TO](other: Future[TO])(f: Future[T])(
+      implicit executor: ExecutionContext): Future[T] =
     promisedFuture[T](p => {
       f.onComplete(result => if (!p.isCompleted) p.tryComplete(result))
       other.onComplete(_ => {
         if (!p.isCompleted)
-          p.tryFailure(new TimeoutException(s"Unable to complete task within the given time limit."))
+          p.tryFailure(
+            new TimeoutException(s"Unable to complete task within the given time limit."))
       })
     })
 
@@ -41,20 +31,20 @@ trait Futures {
     * @tparam U type of result
     * @return the element that first successfully completes the test along with its test result
     */
-  def firstResult[T, U](in: Seq[T])(test: T => Future[U])(implicit executor: ExecutionContext): Future[(T, U)] =
+  def firstResult[T, U](in: Seq[T])(test: T => Future[U])(
+      implicit executor: ExecutionContext): Future[(T, U)] =
     promisedFuture[(T, U)](p => {
       // uses the suppresser to make the Future returned from Future.sequence resilient to individual failures
-      val attempts = in map (elem => test(elem) map (r => if (!p.isCompleted) p.trySuccess((elem, r))) recover Utils.suppresser)
+      val attempts = in map (elem =>
+        test(elem) map (r => if (!p.isCompleted) p.trySuccess((elem, r))) recover Utils.suppresser)
       Future.sequence(attempts).onComplete {
         case _ if !p.isCompleted => p tryFailure new NoSuchElementException
       }
     })
 
-  def firstSuccessful[T, U](in: Seq[T])(test: T => Future[U])(implicit executor: ExecutionContext): Future[T] =
+  def firstSuccessful[T, U](in: Seq[T])(test: T => Future[U])(
+      implicit executor: ExecutionContext): Future[T] =
     firstResult(in)(test).map(_._1)
-
-  def firstSuccessful[T, U](in: Seq[T], timeout: Duration)(test: T => Future[U])(implicit executor: ExecutionContext): Future[T] =
-    within(timeout)(firstSuccessful(in)(test))
 
   /** This method blocks a thread until `dur` has passed, but does not block the caller thread.
     *
@@ -64,8 +54,6 @@ trait Futures {
   @scala.deprecated("Use `delay2(Duration)` instead.")
   def delay(dur: Duration)(implicit executor: ExecutionContext): Future[Unit] =
     Future(blocking(Thread.sleep(dur.toMillis)))
-
-  def delay2(dur: Duration): Future[Unit] = after(dur)(())
 
   /** Constructs a future that is completed according to `keepPromise`. This pattern
     * can be used to convert callback-based APIs to Future-based ones. For example,
@@ -80,44 +68,6 @@ trait Futures {
     val p = Promise[T]()
     keepPromise(p)
     p.future
-  }
-
-  /** Runs `code` after `duration`. The returned [[Future]] contains the successful result of `code` or is completed with
-    * any failure it might throw.
-    *
-    * @param duration delay after which to run `code`
-    * @param code     code to run
-    * @tparam T type of successful result
-    * @return a [[Future]] of the result of running `code` or completed with any failure that it might throw
-    */
-  def after[T](duration: Duration)(code: => T): Future[T] = {
-    val p = Promise[T]()
-    lazy val codeEval = code
-    val sub = emitAfter(duration).subscribe(_ => p tryComplete Try(codeEval))
-    val ret = p.future
-    ret.onComplete(_ => sub.unsubscribe())(ExecutionContexts.cached)
-    ret
-  }
-
-  /** Emits 0L and completes after `duration`.
-    *
-    * @param duration
-    * @return a one-item [[Observable]]
-    */
-  def emitAfter(duration: Duration) = Observable.interval(duration).take(1)
-
-  def timeoutAfter[T](duration: Duration, promise: Promise[T]) =
-    after(duration)(promise tryFailure new concurrent.TimeoutException(s"Timed out after $duration."))
-
-  /**
-    * @param duration timeout
-    * @tparam T type of promise
-    * @return a [[Promise]] that fails with a [[TimeoutException]] after `duration` has passed unless completed by then
-    */
-  def timedPromise[T](duration: Duration) = {
-    val p = Promise[T]()
-    timeoutAfter(duration, p)
-    p
   }
 }
 

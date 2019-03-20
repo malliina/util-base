@@ -3,6 +3,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{
   crossProject => portableProject
 }
 
+val scalaTestVersion = "3.0.7"
+val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+
 val basicSettings = Seq(
   releaseCrossBuild := true,
   scalaVersion := "2.12.8",
@@ -15,12 +18,12 @@ val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= {
     // Uses play-json 2.3.x on 2.11.x since 2.6.x contains JDK8 dependencies which we don't want on Android
     val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor > 11 => "2.7.1"
+      case Some((2, minor)) if minor > 11 => "2.7.2"
       case _                              => "2.3.10"
     }
     Seq(
       "com.typesafe.play" %% "play-json" % playJsonVersion,
-      "org.scalatest" %% "scalatest" % "3.0.6" % Test
+      scalaTest
     )
   },
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
@@ -41,8 +44,7 @@ val utilBase = Project("util-base", file("util-base"))
   .settings(moduleSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "io.reactivex" %% "rxscala" % "0.26.5",
-      "com.neovisionaries" % "nv-websocket-client" % "2.6"
+      "com.neovisionaries" % "nv-websocket-client" % "2.8"
     )
   )
 
@@ -52,8 +54,8 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.13.1",
-      "org.scalatest" %% "scalatest" % "3.0.6" % Test
+      "com.squareup.okhttp3" % "okhttp" % "3.14.0",
+      scalaTest
     )
   )
 
