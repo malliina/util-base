@@ -2,23 +2,28 @@ package com.malliina.values
 
 import play.api.libs.json._
 
-trait Identifier {
+trait Identifier extends Any {
   def id: String
-
   override def toString: String = id
 }
 
+@deprecated("Use WrappedString instead.", "1.10.0")
 abstract class Wrapped(val value: String) {
   override def toString: String = value
 }
 
-trait WrappedId {
-  def id: Long
+trait WrappedString extends Any {
+  def value: String
+  override def toString: String = value
+}
 
+trait WrappedId extends Any {
+  def id: Long
   override def toString = s"$id"
 }
 
-abstract class WrappedLong(val num: Long) {
+trait WrappedLong extends Any {
+  def num: Long
   override def toString = s"$num"
 }
 
@@ -30,7 +35,7 @@ abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
   override def write(t: T) = t.id
 }
 
-abstract class StringCompanion[T <: Wrapped] extends JsonCompanion[String, T] {
+abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
   override def write(t: T) = t.value
 }
 
@@ -64,7 +69,7 @@ abstract class ValidatingCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[
     ErrorMessage(s"Invalid input: '$in'.")
 }
 
-abstract class WrappedEnum[T <: Wrapped] extends StringEnumCompanion[T] {
+abstract class WrappedEnum[T <: WrappedString] extends StringEnumCompanion[T] {
   override def write(t: T) = t.value
 }
 

@@ -6,6 +6,7 @@ import play.api.libs.json.{Format, Reads, Writes}
 /**
   * @param millis millimeters
   */
+@deprecated("Use DistanceM instead.", "1.10.0")
 class Distance(millis: Long) extends Ordered[Distance] {
   private val k = 1000
 

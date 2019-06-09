@@ -5,7 +5,9 @@ import java.nio.file.Path
 /**
   * @param path a path - all separators must be slashes ('/') regardless of platform
   */
-case class UnixPath(path: String) extends Wrapped(path)
+case class UnixPath(path: String) extends WrappedString {
+  def value: String = path
+}
 
 object UnixPath extends StringCompanion[UnixPath] {
   val UnixPathSeparator: Char = '/'

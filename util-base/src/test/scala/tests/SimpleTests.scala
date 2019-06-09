@@ -1,5 +1,7 @@
 package tests
 
+import java.time.{Year, ZoneId}
+
 import com.malliina.network.NetworkDevice
 import org.scalatest.FunSuite
 
@@ -51,5 +53,9 @@ class SimpleTests extends FunSuite {
     val f2 = f.recoverAll(t => 5)
     val results = Await.result(f2, 1.second)
     assert(results === 5)
+  }
+
+  ignore("year now") {
+    println(Year.now(ZoneId.of("Europe/Helsinki")).getValue)
   }
 }

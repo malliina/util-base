@@ -6,21 +6,16 @@ import play.api.libs.json.{Format, Reads, Writes}
 /**
   * @param celsius degrees in Celsius scale
   */
-class Temperature(celsius: Double) extends Ordered[Temperature] {
+case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature] {
   override def compare(that: Temperature): Int = toCelsius compare that.toCelsius
 
   def toCelsius = celsius
-
   def toFahrenheit = Temperature.celsiusToFahrenheit(celsius)
-
   def toKelvin = Temperature.celsiusToKelvin(celsius)
 
   def +(other: Temperature): Temperature = (toCelsius + other.toCelsius).celsius
-
   def -(other: Temperature): Temperature = (toCelsius - other.toCelsius).celsius
-
   def ==(other: Temperature) = toCelsius == other.toCelsius
-
   def !=(other: Temperature) = toCelsius != other.toCelsius
 
   /**

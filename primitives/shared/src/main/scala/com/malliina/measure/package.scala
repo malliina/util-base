@@ -169,6 +169,6 @@ package object measure {
   }
 
   trait DegreeConversions extends Any {
-    def asDegree(dd: Double): Degree = new Degree(dd)
+    def asDegree(dd: Double): DecimalDegrees = new DecimalDegrees(dd)
   }
 }

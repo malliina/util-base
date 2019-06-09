@@ -7,25 +7,19 @@ import play.api.libs.json.{Format, Reads, Writes}
 /**
   * @param kmh kilometers per hour
   */
+@deprecated("Use SpeedM", "1.10.0")
 class Speed(kmh: Double) extends Ordered[Speed] {
   override def compare(that: Speed): Int = kmh compare that.toKmh
 
   def toKmh = kmh
-
   def toKmhDouble = kmh
-
   def toKnots = kmh / knotInKmh
-
   def toKnotsDouble = kmh / knotInKmh
-
   def toMetersPerSecond = kmh / meterPerSecondInKmh
 
   def +(other: Speed) = Speed(kmh + other.toKmh)
-
   def -(other: Speed) = Speed(toKmh - other.toKmh)
-
   def ==(other: Speed) = this.toKmh == other.toKmh
-
   def !=(other: Speed) = this.toKmh != other.toKmh
 
   /**

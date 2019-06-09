@@ -1,6 +1,8 @@
 package com.malliina.values
 
-case class Email(email: String) extends Wrapped(email)
+case class Email(email: String) extends AnyVal with WrappedString {
+  def value = email
+}
 
 object Email extends StringCompanion[Email]
 
@@ -8,13 +10,16 @@ case class UserId(id: Long) extends WrappedId
 
 object UserId extends IdCompanion[UserId]
 
-case class Username(name: String) extends Wrapped(name)
+case class Username(name: String) extends AnyVal with WrappedString {
+  override def value = name
+}
 
 object Username extends StringCompanion[Username] {
   val empty = Username("")
 }
 
-case class Password(pass: String) extends Wrapped(pass) {
+case class Password(pass: String) extends AnyVal with WrappedString {
+  override def value = pass
   override def toString: String = "****"
 }
 
@@ -32,6 +37,7 @@ case class RefreshToken(token: String) extends TokenValue(token)
 
 object RefreshToken extends StringCompanion[RefreshToken]
 
-sealed abstract class TokenValue(token: String) extends Wrapped(token) {
-  override def toString = token
+sealed abstract class TokenValue(token: String) extends WrappedString {
+  override def value: String = token
+  override def toString: String = token
 }

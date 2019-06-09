@@ -8,7 +8,8 @@ def ivyResolver(name: String, urlStr: String) =
   Resolver.url(name, url(urlStr))(Resolver.ivyStylePatterns)
 
 Seq(
-  "com.malliina" %% "sbt-utils-maven" % "0.11.0",
+  "com.malliina" %% "sbt-utils-maven" % "0.12.1",
   "org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0",
-  "org.scala-js" % "sbt-scalajs" % "0.6.26"
+  "org.scala-js" % "sbt-scalajs" % "0.6.26",
+  "ch.epfl.scala" % "sbt-bloop" % "1.2.5"
 ) map addSbtPlugin

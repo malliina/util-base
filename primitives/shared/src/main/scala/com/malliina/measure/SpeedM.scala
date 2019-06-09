@@ -7,7 +7,7 @@ import play.api.libs.json.{Format, Reads, Writes}
 /**
   * @param mps meters per second
   */
-class SpeedM(mps: Double) extends Ordered[SpeedM] {
+case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
   override def compare(that: SpeedM): Int = mps compare that.toMps
 
   def toMps = mps
@@ -17,11 +17,8 @@ class SpeedM(mps: Double) extends Ordered[SpeedM] {
   def toKnots = toKmh / knotInKmh
 
   def +(other: SpeedM): SpeedM = SpeedM(toMps + other.toMps)
-
   def -(other: SpeedM): SpeedM = SpeedM(toMps - other.toMps)
-
   def ==(other: SpeedM) = this.toMps == other.toMps
-
   def !=(other: SpeedM) = this.toMps != other.toMps
 
   def formatMs = s"$toMps m/s"

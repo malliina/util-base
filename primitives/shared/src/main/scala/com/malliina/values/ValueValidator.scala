@@ -1,7 +1,6 @@
 package com.malliina.values
 
 trait ValueValidator[T, U] {
-
   protected def build(t: T): U
 
   def isValid(elem: T): Boolean
