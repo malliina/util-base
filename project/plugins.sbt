@@ -10,6 +10,6 @@ def ivyResolver(name: String, urlStr: String) =
 Seq(
   "com.malliina" %% "sbt-utils-maven" % "0.12.1",
   "org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0",
-  "org.scala-js" % "sbt-scalajs" % "0.6.26",
+  "org.scala-js" % "sbt-scalajs" % "0.6.28",
   "ch.epfl.scala" % "sbt-bloop" % "1.2.5"
 ) map addSbtPlugin
