@@ -1,6 +1,6 @@
 package com.malliina.measure
 
-import com.malliina.measure.Speed.{knotInKmh, meterPerSecondInKmh}
+import com.malliina.measure.SpeedM.{knotInKmh, meterPerSecondInKmh}
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{Format, Reads, Writes}
 
