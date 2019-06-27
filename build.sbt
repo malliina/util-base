@@ -3,13 +3,13 @@ import sbtcrossproject.CrossPlugin.autoImport.{
   crossProject => portableProject
 }
 
-val scalaTestVersion = "3.0.7"
+val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
 val basicSettings = Seq(
   releaseCrossBuild := true,
-  scalaVersion := "2.12.8",
-  crossScalaVersions := scalaVersion.value :: Nil,
+  scalaVersion := "2.13.0",
+  crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
   gitUserName := "malliina",
   organization := "com.malliina",
   developerName := "Michael Skogberg"
@@ -18,7 +18,7 @@ val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= {
     // Uses play-json 2.3.x on 2.11.x since 2.6.x contains JDK8 dependencies which we don't want on Android
     val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor > 11 => "2.7.3"
+      case Some((2, minor)) if minor > 11 => "2.7.4"
       case _                              => "2.3.10"
     }
     Seq(
@@ -44,7 +44,7 @@ val utilBase = Project("util-base", file("util-base"))
   .settings(moduleSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.neovisionaries" % "nv-websocket-client" % "2.8"
+      "com.neovisionaries" % "nv-websocket-client" % "2.9"
     )
   )
 
@@ -54,7 +54,7 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.14.2",
+      "com.squareup.okhttp3" % "okhttp" % "4.0.0",
       scalaTest
     )
   )

@@ -16,7 +16,7 @@ class OkHttpResponse(val inner: Response) extends HttpResponse {
   def code: Int = inner.code()
 
   def headers: Map[String, Seq[String]] =
-    inner.headers().toMultimap.asScala.toMap.mapValues(_.asScala)
+    inner.headers().toMultimap.asScala.toMap.map { case (k, v) => k -> v.asScala.toList }
 }
 
 trait HttpResponse {
