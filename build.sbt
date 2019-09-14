@@ -35,6 +35,9 @@ val primitives = portableProject(JSPlatform, JVMPlatform)
   .in(file("primitives"))
   .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
+  .settings(
+    releaseProcess := tagReleaseProcess.value,
+  )
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
 
@@ -45,7 +48,8 @@ val utilBase = Project("util-base", file("util-base"))
   .settings(
     libraryDependencies ++= Seq(
       "com.neovisionaries" % "nv-websocket-client" % "2.9"
-    )
+    ),
+    releaseProcess := tagReleaseProcess.value
   )
 
 val okClient = Project("okclient", file("okclient"))
@@ -54,9 +58,10 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.0.0",
+      "com.squareup.okhttp3" % "okhttp" % "4.1.0",
       scalaTest
-    )
+    ),
+    releaseProcess := tagReleaseProcess.value
   )
 
 val utilBaseRoot = project
@@ -69,5 +74,6 @@ val utilBaseRoot = project
     publishArtifact := false,
     packagedArtifacts := Map.empty,
     publish := {},
-    publishLocal := {}
+    publishLocal := {},
+    releaseProcess := (tagReleaseProcess in okClient).value
   )

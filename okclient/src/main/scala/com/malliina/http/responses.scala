@@ -3,7 +3,7 @@ package com.malliina.http
 import okhttp3.Response
 import play.api.libs.json.{JsError, JsValue, Json, Reads}
 
-import scala.collection.JavaConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters.{MapHasAsScala, ListHasAsScala}
 import scala.util.Try
 
 object OkHttpResponse {
@@ -11,7 +11,10 @@ object OkHttpResponse {
 }
 
 class OkHttpResponse(val inner: Response) extends HttpResponse {
-  override val asString = inner.body().string()
+  val body = Option(inner.body())
+  // Intentionally reads the body eagerly
+  val string = body.map(_.string())
+  override val asString = string.getOrElse("")
 
   def code: Int = inner.code()
 
@@ -36,7 +39,7 @@ trait HttpResponse {
     Try(Json.parse(asString)).toOption.toRight(JsError(s"Not JSON: '$asString'."))
 
   def parse[T: Reads]: Either[JsError, T] =
-    json.right.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
+    json.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
 
   def isSuccess: Boolean = code >= 200 && code < 300
 }
