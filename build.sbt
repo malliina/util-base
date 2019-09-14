@@ -15,17 +15,10 @@ val basicSettings = Seq(
   developerName := "Michael Skogberg"
 )
 val moduleSettings = basicSettings ++ Seq(
-  libraryDependencies ++= {
-    // Uses play-json 2.3.x on 2.11.x since 2.6.x contains JDK8 dependencies which we don't want on Android
-    val playJsonVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, minor)) if minor > 11 => "2.7.4"
-      case _                              => "2.3.10"
-    }
-    Seq(
-      "com.typesafe.play" %% "play-json" % playJsonVersion,
-      scalaTest
-    )
-  },
+  libraryDependencies ++= Seq(
+    "com.typesafe.play" %% "play-json" % "2.7.4",
+    scalaTest
+  ),
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   scalacOptions += "-target:jvm-1.6"
 )

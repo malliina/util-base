@@ -3,7 +3,7 @@ package com.malliina.http
 import okhttp3.Response
 import play.api.libs.json.{JsError, JsValue, Json, Reads}
 
-import scala.jdk.CollectionConverters.{MapHasAsScala, ListHasAsScala}
+import scala.collection.JavaConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 import scala.util.Try
 
 object OkHttpResponse {
@@ -28,11 +28,8 @@ trait HttpResponse {
     * @return the body as a string
     */
   def asString: String
-
   def headers: Map[String, Seq[String]]
-
   def code: Int
-
   def status: Int = code
 
   def json: Either[JsError, JsValue] =
@@ -46,11 +43,8 @@ trait HttpResponse {
 
 sealed trait ResponseError {
   def url: FullUrl
-
   def response: OkHttpResponse
-
   def code: Int = response.code
-
   def toException: ResponseException = new ResponseException(this)
 }
 
