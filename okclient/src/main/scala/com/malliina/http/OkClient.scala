@@ -10,12 +10,13 @@ import com.malliina.http.OkClient.MultiPartFile
 import com.malliina.storage.{StorageLong, StorageSize}
 import javax.net.ssl.{SSLSocketFactory, X509TrustManager}
 import okhttp3._
-import play.api.libs.json.{JsValue, Json, Reads}
+import play.api.libs.json.{JsValue, Json, Reads, Writes}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object OkClient {
   val jsonMediaType: MediaType = MediaType.parse("application/json")
+  val plainText = MediaType.parse("text/plain")
 
   def default: OkClient = apply(okHttpClient)
 
@@ -77,6 +78,11 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
       }
     }
 
+  def postAs[W: Writes, T: Reads](url: FullUrl,
+                                  json: W,
+                                  headers: Map[String, String] = Map.empty): Future[T] =
+    postJson(url, Json.toJson(json), headers).flatMap(r => parse[T](r, url))
+
   def postJsonAs[T: Reads](url: FullUrl,
                            json: JsValue,
                            headers: Map[String, String] = Map.empty): Future[T] =
@@ -85,13 +91,13 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
   def postJson(url: FullUrl,
                json: JsValue,
                headers: Map[String, String] = Map.empty): Future[OkHttpResponse] =
-    post(url, RequestBody.create(OkClient.jsonMediaType, Json.stringify(json)), headers)
+    post(url, RequestBody.create(Json.stringify(json), OkClient.jsonMediaType), headers)
 
   def postFile(url: FullUrl,
                mediaType: MediaType,
                file: Path,
                headers: Map[String, String] = Map.empty): Future[OkHttpResponse] =
-    post(url, RequestBody.create(mediaType, file.toFile), headers)
+    post(url, RequestBody.create(file.toFile, mediaType), headers)
 
   def postFormAs[T: Reads](url: FullUrl,
                            form: Map[String, String],
@@ -120,7 +126,7 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
                 headers: Map[String, String] = Map.empty,
                 parts: Map[String, String] = Map.empty,
                 files: Seq[MultiPartFile] = Nil): Future[OkHttpResponse] = {
-    val bodyBuilder = new MultipartBody.Builder()
+    val bodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM)
     parts.foreach {
       case (k, v) =>
         bodyBuilder.addFormDataPart(k, v)
@@ -128,7 +134,7 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
     files.foreach { filePart =>
       bodyBuilder.addFormDataPart(filePart.partName,
                                   filePart.fileName,
-                                  RequestBody.create(filePart.mediaType, filePart.file.toFile))
+                                  RequestBody.create(filePart.file.toFile, filePart.mediaType))
     }
     post(url, bodyBuilder.build(), headers)
   }
@@ -188,7 +194,7 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
     Option(client.cache()).foreach(_.close())
   }
 
-  private def requestFor(url: FullUrl, headers: Map[String, String]) =
+  def requestFor(url: FullUrl, headers: Map[String, String]) =
     headers.foldLeft(new Request.Builder().url(url.url)) {
       case (r, (key, value)) => r.addHeader(key, value)
     }
