@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/malliina/util-base.png?branch=master)](https://travis-ci.org/malliina/util-base)
-[![Maven Central](https://img.shields.io/maven-central/v/com.malliina/util-base_2.12.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.malliina%22%20AND%20a%3A%22util-base_2.12%22)
+[![Maven Central](https://img.shields.io/maven-central/v/com.malliina/util-base_2.13.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.malliina%22%20AND%20a%3A%22util-base_2.13%22)
 
 # Utility code
 

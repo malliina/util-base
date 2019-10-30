@@ -1,35 +1,32 @@
-import sbtcrossproject.CrossPlugin.autoImport.{
-  CrossType => PortableType,
-  crossProject => portableProject
-}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
 val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
 val basicSettings = Seq(
   releaseCrossBuild := true,
-  scalaVersion := "2.13.0",
-  crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
+  scalaVersion := "2.13.1",
+  crossScalaVersions := scalaVersion.value :: "2.12.10" :: Nil,
   gitUserName := "malliina",
   organization := "com.malliina",
-  developerName := "Michael Skogberg"
+  developerName := "Michael Skogberg",
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+  scalacOptions += "-target:jvm-1.8"
 )
 val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= Seq(
     "com.typesafe.play" %% "play-json" % "2.7.4",
     scalaTest
-  ),
-  javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-  scalacOptions += "-target:jvm-1.6"
+  )
 )
-
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
   .in(file("primitives"))
   .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
   .settings(
-    releaseProcess := tagReleaseProcess.value,
+    releaseProcess := tagReleaseProcess.value
+//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
@@ -43,6 +40,7 @@ val utilBase = Project("util-base", file("util-base"))
       "com.neovisionaries" % "nv-websocket-client" % "2.9"
     ),
     releaseProcess := tagReleaseProcess.value
+//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 
 val okClient = Project("okclient", file("okclient"))
@@ -55,6 +53,7 @@ val okClient = Project("okclient", file("okclient"))
       scalaTest
     ),
     releaseProcess := tagReleaseProcess.value
+//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 
 val utilBaseRoot = project
