@@ -3,8 +3,6 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossP
 val scalaTestVersion = "3.1.0"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
-Global / beforeCommitRelease := {}
-
 val basicSettings = Seq(
   releaseCrossBuild := true,
   scalaVersion := "2.13.1",

@@ -8,7 +8,7 @@ def ivyResolver(name: String, urlStr: String) =
   Resolver.url(name, url(urlStr))(Resolver.ivyStylePatterns)
 
 Seq(
-  "com.malliina" %% "sbt-utils-maven" % "0.14.2",
+  "com.malliina" %% "sbt-utils-maven" % "0.15.0",
   "org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0",
   "org.scala-js" % "sbt-scalajs" % "0.6.31",
   "ch.epfl.scala" % "sbt-bloop" % "1.3.4",
