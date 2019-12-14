@@ -3,6 +3,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossP
 val scalaTestVersion = "3.1.0"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
+Global / beforeCommitRelease := {}
+
 val basicSettings = Seq(
   releaseCrossBuild := true,
   scalaVersion := "2.13.1",
@@ -26,7 +28,6 @@ val primitives = portableProject(JSPlatform, JVMPlatform)
   .settings(moduleSettings)
   .settings(
     releaseProcess := tagReleaseProcess.value
-//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
@@ -40,7 +41,6 @@ val utilBase = Project("util-base", file("util-base"))
       "com.neovisionaries" % "nv-websocket-client" % "2.9"
     ),
     releaseProcess := tagReleaseProcess.value
-//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 
 val okClient = Project("okclient", file("okclient"))
@@ -53,7 +53,6 @@ val okClient = Project("okclient", file("okclient"))
       scalaTest
     ),
     releaseProcess := tagReleaseProcess.value
-//    publishTo := Option("GitHub malliina Apache Maven Packages" at "https://maven.pkg.github.com/malliina/util-base")
   )
 
 val utilBaseRoot = project
