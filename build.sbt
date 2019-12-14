@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val scalaTestVersion = "3.0.8"
+val scalaTestVersion = "3.1.0"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
 val basicSettings = Seq(
@@ -15,7 +15,7 @@ val basicSettings = Seq(
 )
 val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= Seq(
-    "com.typesafe.play" %% "play-json" % "2.7.4",
+    "com.typesafe.play" %% "play-json" % "2.8.1",
     scalaTest
   )
 )
@@ -49,7 +49,7 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.1.0",
+      "com.squareup.okhttp3" % "okhttp" % "4.2.2",
       scalaTest
     ),
     releaseProcess := tagReleaseProcess.value
