@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val scalaTestVersion = "3.1.0"
+val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
 val basicSettings = Seq(
