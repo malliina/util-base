@@ -27,16 +27,22 @@ trait WrappedLong extends Any {
   override def toString = s"$num"
 }
 
+trait WrappedValue[T] {
+  def value: T
+}
+
 abstract class IdentCompanion[T <: Identifier] extends JsonCompanion[String, T] {
   override def write(t: T): String = t.id
 }
 
 abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
-  override def write(t: T) = t.id
+  override def write(t: T): Long = t.id
 }
 
 abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
-  override def write(t: T) = t.value
+  implicit val readable: Readable[T] = Readable.string.flatMap(s => build(s))
+
+  override def write(t: T): String = t.value
 }
 
 abstract class JsonCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw])
@@ -58,7 +64,7 @@ abstract class ValidatingCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[
   }
 
   private val writer = Writes[T](t => Json.toJson(write(t)))
-  implicit val json = Format[T](reader, writer)
+  implicit val json: Format[T] = Format[T](reader, writer)
   implicit val ordering: Ordering[T] = o.on(write)
 
   def build(input: Raw): Either[ErrorMessage, T]

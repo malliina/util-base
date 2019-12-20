@@ -12,7 +12,7 @@ case class UnixPath(path: String) extends WrappedString {
 object UnixPath extends StringCompanion[UnixPath] {
   val UnixPathSeparator: Char = '/'
   val WindowsPathSeparator = '\\'
-  val Empty = UnixPath("")
+  val Empty: UnixPath = UnixPath("")
 
   def apply(path: Path): UnixPath = fromRaw(path.toString)
 

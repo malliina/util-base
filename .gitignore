@@ -6,4 +6,7 @@ target/
 .idea_modules/
 *.log
 .hydra
+hydra.sbt
+
 .bloop
+out
