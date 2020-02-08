@@ -1,4 +1,7 @@
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
+import sbtcrossproject.CrossPlugin.autoImport.{
+  CrossType => PortableType,
+  crossProject => portableProject
+}
 
 val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
@@ -47,7 +50,7 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.2.2",
+      "com.squareup.okhttp3" % "okhttp" % "4.3.1",
       scalaTest
     ),
     releaseProcess := tagReleaseProcess.value
@@ -66,3 +69,5 @@ val utilBaseRoot = project
     publishLocal := {},
     releaseProcess := (tagReleaseProcess in okClient).value
   )
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
