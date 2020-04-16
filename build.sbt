@@ -19,7 +19,8 @@ val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= Seq(
     "com.typesafe.play" %% "play-json" % "2.8.1",
     munit
-  )
+  ),
+  testFrameworks += new TestFramework("munit.Framework")
 )
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
