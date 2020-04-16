@@ -1,8 +1,6 @@
 package com.malliina.measure
 
-import org.scalatest.FunSuite
-
-class MeasureTests extends FunSuite {
+class MeasureTests extends munit.FunSuite {
   test("dms to dd") {
     val dms = DecimalDegrees.Dms(74, 0, 21)
     val dd = dms.dd
@@ -12,16 +10,16 @@ class MeasureTests extends FunSuite {
   test("dd to dms") {
     val dd = new DecimalDegrees(38.8897)
     val dms = dd.dms
-    assert(dms.degree === 38)
-    assert(dms.minute === 53)
-    assert(math.rint(dms.seconds).toInt === 23)
+    assert(dms.degree == 38)
+    assert(dms.minute == 53)
+    assert(math.rint(dms.seconds).toInt == 23)
     assert(dms.dd.absDiff(dd) < 0.001)
   }
 
   test("degree is zero") {
     val dd = (-74.00583333).dd
     val dms = dd.dms
-    assert(dd.dms.degree === -74)
+    assert(dd.dms.degree == -74)
     assert(dms.dd.absDiff(dd) < 0.00001)
   }
 
@@ -29,7 +27,7 @@ class MeasureTests extends FunSuite {
     val dms = DecimalDegrees.Dms(0, 0, -15)
     val dd = dms.dd
     assert(dd.isNegative)
-    assert(dd.dms === dms)
+    assert(dd.dms == dms)
   }
 
   test("minute is zero") {
@@ -49,7 +47,7 @@ class MeasureTests extends FunSuite {
     val s1 = SpeedM(4)
     val s2 = SpeedM(2)
     val s3 = SpeedM(11.4)
-    assert(Seq(s1, s2, s3).sorted === Seq(s2, s1, s3))
+    assert(Seq(s1, s2, s3).sorted == Seq(s2, s1, s3))
   }
 
   test("compare speeds") {
