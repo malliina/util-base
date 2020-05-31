@@ -3,12 +3,12 @@ import sbtcrossproject.CrossPlugin.autoImport.{
   crossProject => portableProject
 }
 
-val munit = "org.scalameta" %% "munit" % "0.7.6" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.7" % Test
 
 val basicSettings = Seq(
   releaseCrossBuild := true,
   scalaVersion := "2.13.2",
-  crossScalaVersions := scalaVersion.value :: "2.12.10" :: Nil,
+  crossScalaVersions := scalaVersion.value :: "2.12.11" :: Nil,
   gitUserName := "malliina",
   organization := "com.malliina",
   developerName := "Michael Skogberg",
@@ -17,7 +17,7 @@ val basicSettings = Seq(
 )
 val moduleSettings = basicSettings ++ Seq(
   libraryDependencies ++= Seq(
-    "com.typesafe.play" %% "play-json" % "2.8.1",
+    "com.typesafe.play" %% "play-json" % "2.9.0",
     munit
   ),
   testFrameworks += new TestFramework("munit.Framework")
@@ -50,7 +50,7 @@ val okClient = Project("okclient", file("okclient"))
   .settings(basicSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.6.0",
+      "com.squareup.okhttp3" % "okhttp" % "4.7.2",
       munit
     ),
     releaseProcess := tagReleaseProcess.value
