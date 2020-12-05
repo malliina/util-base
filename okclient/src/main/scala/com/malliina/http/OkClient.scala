@@ -1,16 +1,12 @@
 package com.malliina.http
 
 import java.io.{Closeable, IOException}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.Path
 import java.util
 import java.util.concurrent.Executors
 
-import com.malliina.http.OkClient.MultiPartFile
-import com.malliina.storage.{StorageLong, StorageSize}
 import javax.net.ssl.{SSLSocketFactory, X509TrustManager}
 import okhttp3._
-import play.api.libs.json.{JsValue, Json, Reads, Writes}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -48,115 +44,10 @@ object OkClient {
   }
 }
 
-class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable {
-  implicit val exec = ec
-
-  def getAs[T: Reads](url: FullUrl, headers: Map[String, String] = Map.empty): Future[T] =
-    get(url, headers).flatMap(r => parse[T](r, url))
-
-  def get(url: FullUrl, headers: Map[String, String] = Map.empty): Future[OkHttpResponse] = {
-    val req = requestFor(url, headers)
-    execute(req.get().build())
-  }
-
-  /** Downloads `url` to `to`, returning the number of bytes written to `to`.
-    *
-    * @param url     url to download
-    * @param to      destination, a file
-    * @param headers http headers
-    * @return bytes written
-    */
-  def download(url: FullUrl,
-               to: Path,
-               headers: Map[String, String] = Map.empty): Future[Either[StatusError, StorageSize]] =
-    streamed(requestFor(url, headers).get().build()) { response =>
-      Future.successful {
-        if (response.isSuccessful)
-          Right(
-            Files.copy(response.body().byteStream(), to, StandardCopyOption.REPLACE_EXISTING).bytes)
-        else Left(StatusError(OkHttpResponse(response), url))
-      }
-    }
-
-  def postAs[W: Writes, T: Reads](url: FullUrl,
-                                  json: W,
-                                  headers: Map[String, String] = Map.empty): Future[T] =
-    postJson(url, Json.toJson(json), headers).flatMap(r => parse[T](r, url))
-
-  def postJsonAs[T: Reads](url: FullUrl,
-                           json: JsValue,
-                           headers: Map[String, String] = Map.empty): Future[T] =
-    postJson(url, json, headers).flatMap(r => parse[T](r, url))
-
-  def postJson(url: FullUrl,
-               json: JsValue,
-               headers: Map[String, String] = Map.empty): Future[OkHttpResponse] =
-    post(url, RequestBody.create(Json.stringify(json), OkClient.jsonMediaType), headers)
-
-  def postFile(url: FullUrl,
-               mediaType: MediaType,
-               file: Path,
-               headers: Map[String, String] = Map.empty): Future[OkHttpResponse] =
-    post(url, RequestBody.create(file.toFile, mediaType), headers)
-
-  def postFormAs[T: Reads](url: FullUrl,
-                           form: Map[String, String],
-                           headers: Map[String, String] = Map.empty): Future[T] =
-    postForm(url, form, headers).flatMap(r => parse[T](r, url))
-
-  def postForm(url: FullUrl,
-               form: Map[String, String],
-               headers: Map[String, String] = Map.empty): Future[OkHttpResponse] = {
-    val bodyBuilder = new FormBody.Builder(StandardCharsets.UTF_8)
-    form foreach {
-      case (k, v) =>
-        bodyBuilder.add(k, v)
-    }
-    post(url, bodyBuilder.build(), headers)
-  }
-
-  def post(url: FullUrl,
-           body: RequestBody,
-           headers: Map[String, String]): Future[OkHttpResponse] = {
-    val builder = requestFor(url, headers).post(body)
-    execute(builder.build())
-  }
-
-  def multiPart(url: FullUrl,
-                headers: Map[String, String] = Map.empty,
-                parts: Map[String, String] = Map.empty,
-                files: Seq[MultiPartFile] = Nil): Future[OkHttpResponse] = {
-    val bodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM)
-    parts.foreach {
-      case (k, v) =>
-        bodyBuilder.addFormDataPart(k, v)
-    }
-    files.foreach { filePart =>
-      bodyBuilder.addFormDataPart(filePart.partName,
-                                  filePart.fileName,
-                                  RequestBody.create(filePart.file.toFile, filePart.mediaType))
-    }
-    post(url, bodyBuilder.build(), headers)
-  }
-
-  /** Parses the response as a T.
-    *
-    * The returned Future fails with a ResponseError if parsing fails.
-    *
-    * @param response HTTP response
-    * @param url the request URL
-    * @tparam T type to parse
-    * @return a parsed response
-    */
-  def parse[T: Reads](response: OkHttpResponse, url: FullUrl): Future[T] =
-    if (response.isSuccess) {
-      response
-        .parse[T]
-        .fold(err => Future.failed(JsonError(err, response, url).toException),
-              ok => Future.successful(ok))
-    } else {
-      Future.failed(StatusError(response, url).toException)
-    }
+class OkClient(val client: OkHttpClient, ec: ExecutionContext)
+  extends HttpClient[Future]
+  with OkHttpBackend {
+  implicit val exec: ExecutionContext = ec
 
   def execute(request: Request): Future[OkHttpResponse] =
     raw(request).map(OkHttpResponse.apply)
@@ -188,16 +79,9 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext) extends Closeable
     future
   }
 
-  override def close(): Unit = {
-    client.dispatcher().executorService().shutdown()
-    client.connectionPool().evictAll()
-    Option(client.cache()).foreach(_.close())
-  }
-
-  def requestFor(url: FullUrl, headers: Map[String, String]) =
-    headers.foldLeft(new Request.Builder().url(url.url)) {
-      case (r, (key, value)) => r.addHeader(key, value)
-    }
+  override def flatMap[T, U](t: Future[T])(f: T => Future[U]): Future[U] = t.flatMap(f)
+  override def success[T](t: T): Future[T] = Future.successful(t)
+  override def fail[T](e: Exception): Future[T] = Future.failed(e)
 }
 
 class RawCallback(p: Promise[Response]) extends Callback {
