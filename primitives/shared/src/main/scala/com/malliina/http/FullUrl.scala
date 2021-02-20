@@ -30,7 +30,7 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     val encoded = map.mapValues(v => URLEncoder.encode(v, "UTF-8"))
     withQuery(encoded.toSeq: _*)
   }
-  
+
   def withQuery(qs: (String, String)*): FullUrl = {
     val asString = qs.map { case (k, v) => s"$k=$v" }.mkString("&")
     val firstChar = if (uri.contains("?")) "&" else "?"
@@ -67,7 +67,7 @@ object FullUrl extends ValidatingCompanion[String, FullUrl] {
     if (m.find() && m.groupCount() == 3) {
       Right(FullUrl(m group 1, m group 2, m group 3))
     } else {
-      Left(defaultError(input))
+      Left(ErrorMessage(s"Invalid URL: '$input'."))
     }
   }
 }
