@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val munit = "org.scalameta" %% "munit" % "0.7.19" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.22" % Test
 
 inThisBuild(
   Seq(
@@ -18,7 +18,7 @@ inThisBuild(
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq(
-    "com.typesafe.play" %% "play-json" % "2.9.1",
+    "com.typesafe.play" %% "play-json" % "2.9.2",
     munit
   )
 )
@@ -36,7 +36,7 @@ val utilBase = Project("util-base", file("util-base"))
   .settings(moduleSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.neovisionaries" % "nv-websocket-client" % "2.10"
+      "com.neovisionaries" % "nv-websocket-client" % "2.12"
     ),
     releaseProcess := tagReleaseProcess.value
   )
@@ -46,7 +46,7 @@ val okClient = Project("okclient", file("okclient"))
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.9.0",
+      "com.squareup.okhttp3" % "okhttp" % "4.9.1",
       munit
     ),
     releaseProcess := tagReleaseProcess.value
