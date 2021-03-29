@@ -5,8 +5,8 @@ val munit = "org.scalameta" %% "munit" % "0.7.22" % Test
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "2.13.3",
-    crossScalaVersions := scalaVersion.value :: "2.12.12" :: Nil,
+    scalaVersion := "2.13.5",
+    crossScalaVersions := scalaVersion.value :: "2.12.13" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -36,7 +36,7 @@ val utilBase = Project("util-base", file("util-base"))
   .settings(moduleSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.neovisionaries" % "nv-websocket-client" % "2.12"
+      "com.neovisionaries" % "nv-websocket-client" % "2.14"
     ),
     releaseProcess := tagReleaseProcess.value
   )

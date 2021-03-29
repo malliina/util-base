@@ -2,13 +2,14 @@ package com.malliina.http
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardCopyOption}
-
 import com.malliina.http.OkClient.MultiPartFile
 import com.malliina.storage.{StorageLong, StorageSize}
 import okhttp3._
 import play.api.libs.json.{JsValue, Json, Reads, Writes}
 
-trait HttpClient[F[_]] {
+import java.io.Closeable
+
+trait HttpClient[F[_]] extends Closeable {
   implicit class FOps[T](f: F[T]) {
     def flatMap[U](code: T => F[U]): F[U] = HttpClient.this.flatMap(f)(code)
   }
@@ -157,4 +158,5 @@ trait HttpClient[F[_]] {
   def flatMap[T, U](t: F[T])(f: T => F[U]): F[U]
   def success[T](t: T): F[T]
   def fail[T](e: Exception): F[T]
+  def close(): Unit
 }
