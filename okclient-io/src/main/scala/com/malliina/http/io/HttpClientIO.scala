@@ -1,11 +1,12 @@
 package com.malliina.http.io
 
-import java.io.IOException
-
+import cats.MonadError
 import cats.effect.IO
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
 import okhttp3._
+
+import java.io.IOException
 
 object HttpClientIO {
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
@@ -24,15 +25,17 @@ object HttpClientIO {
   }
 }
 
-class HttpClientIO(val client: OkHttpClient) extends HttpClient[IO] with OkHttpBackend {
+class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttpBackend {
   override def streamed[T](request: Request)(consume: Response => IO[T]): IO[T] =
     raw(request).bracket(consume)(r => IO(r.close()))
-  override def execute(request: Request): IO[OkHttpResponse] =
-    raw(request).map(OkHttpResponse.apply)
   override def raw(request: Request): IO[Response] =
     client.newCall(request).io
+}
 
-  override def flatMap[T, U](t: IO[T])(f: T => IO[U]): IO[U] = t.flatMap(f)
-  override def success[T](t: T): IO[T] = IO.pure(t)
-  override def fail[T](e: Exception): IO[T] = IO.raiseError(e)
+abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {
+  override def execute(request: Request): F[OkHttpResponse] =
+    F.map(raw(request))(OkHttpResponse.apply)
+  override def flatMap[T, U](t: F[T])(f: T => F[U]): F[U] = F.flatMap(t)(f)
+  override def success[T](t: T): F[T] = F.pure(t)
+  override def fail[T](e: Exception): F[T] = F.raiseError(e)
 }

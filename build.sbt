@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val munit = "org.scalameta" %% "munit" % "0.7.22" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.23" % Test
 
 inThisBuild(
   Seq(
@@ -69,12 +69,12 @@ val utilBaseRoot = project
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient, okClientIo)
   .settings(
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))),
-    skip in publish := true,
+    publish / skip := true,
     publishArtifact := false,
     packagedArtifacts := Map.empty,
     publish := {},
     publishLocal := {},
-    releaseProcess := (tagReleaseProcess in okClient).value
+    releaseProcess := (okClient / tagReleaseProcess).value
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
