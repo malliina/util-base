@@ -57,8 +57,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.2.0",
-      "org.typelevel" %% "cats-effect" % "2.2.0",
+      "org.typelevel" %% "cats-core" % "2.5.0",
+      "org.typelevel" %% "cats-effect" % "2.4.1",
       munit
     ),
     releaseProcess := tagReleaseProcess.value
