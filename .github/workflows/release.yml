@@ -19,7 +19,7 @@ jobs:
           java-version: 11.0.2
       - name: Download and install SBT
         env:
-          SBT_VERSION: 1.3.7
+          SBT_VERSION: 1.4.6
         run: |
           curl -L -o sbt-${SBT_VERSION}.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb
           sudo dpkg -i sbt-${SBT_VERSION}.deb
@@ -40,4 +40,4 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SonatypeUsername }}
           SONATYPE_PASSWORD: ${{ secrets.SonatypePassword }}
           PGP_PASSPHRASE: ${{ secrets.PgpPassphrase }}
-        run: sbt "project root" releaseArtifacts
+        run: sbt releaseArtifacts
