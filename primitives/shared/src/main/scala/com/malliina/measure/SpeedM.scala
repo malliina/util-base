@@ -35,11 +35,13 @@ object SpeedM {
   val knotInKmh = 1.852d
   val meterPerSecondInKmh = 3.6d
 
-  val kmhEncoder: Encoder[SpeedM] = Encoder.encodeDouble.contramap(_.toKmh)
-  val kmhDecoder: Decoder[SpeedM] =
-    Decoder.decodeDouble.map(kmh => apply(kmh / meterPerSecondInKmh))
+  val kmhJson = Codec.from(
+    Decoder.decodeDouble.map(kmh => apply(kmh / meterPerSecondInKmh)),
+    Encoder.encodeDouble.contramap(_.toKmh)
+  )
 
-  implicit val knotsEncoder: Encoder[SpeedM] = Encoder.encodeDouble.contramap(_.toKnots)
-  implicit val knotsDecoder: Decoder[SpeedM] =
-    Decoder.decodeDouble.map(kn => apply(kn * knotInKmh / meterPerSecondInKmh))
+  implicit val knotsJson: Codec[SpeedM] = Codec.from(
+    Decoder.decodeDouble.map(kn => apply(kn * knotInKmh / meterPerSecondInKmh)),
+    Encoder.encodeDouble.contramap(_.toKnots)
+  )
 }

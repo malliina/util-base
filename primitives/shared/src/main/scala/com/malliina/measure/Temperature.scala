@@ -30,13 +30,15 @@ object Temperature {
   val zeroCelsius = new Temperature(0)
   val absoluteZero = new Temperature(-kelvinDiff)
 
-  implicit val celsiusEncoder: Encoder[Temperature] =
+  implicit val celsiusJson: Codec[Temperature] = Codec.from(
+    Decoder.decodeDouble.map(_.celsius),
     Encoder.encodeDouble.contramap[Temperature](_.toCelsius)
-  implicit val celsiusDecoder: Decoder[Temperature] = Decoder.decodeDouble.map(_.celsius)
+  )
 
-  implicit val fahrenheitEncoder: Encoder[Temperature] =
+  val fahrenheitJson = Codec.from(
+    Decoder.decodeDouble.map(_.fahrenheit),
     Encoder.encodeDouble.contramap[Temperature](_.toFahrenheit)
-  implicit val fahrenheitDecoder: Decoder[Temperature] = Decoder.decodeDouble.map(_.fahrenheit)
+  )
 
   def celsiusToFahrenheit(c: Double): Double = c * 9 / 5 + 32
   def fahrenheitToCelsius(f: Double): Double = (f - 32) * 5 / 9

@@ -39,6 +39,8 @@ object DistanceM {
 
   def apply(meters: Double): DistanceM = new DistanceM(meters)
 
-  implicit val encoder: Encoder[DistanceM] = Encoder.encodeDouble.contramap(_.toMeters)
-  implicit val decoder: Decoder[DistanceM] = Decoder.decodeDouble.map(m => DistanceM(m))
+  implicit val json: Codec[DistanceM] = Codec.from(
+    Decoder.decodeDouble.map(m => DistanceM(m)),
+    Encoder.encodeDouble.contramap(_.toMeters)
+  )
 }

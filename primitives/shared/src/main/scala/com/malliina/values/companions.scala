@@ -59,29 +59,15 @@ abstract class ValidatingCompanion[Raw, T](
   e: Encoder[Raw],
   o: Ordering[Raw]
 ) {
-  val encoder = e.contramap[T](write)
-  val decoder =
-    d.emapTry(raw => build(raw).fold(err => Failure(new Exception(err.message)), t => Success(t)))
-//  implicit val encoder =
-//  private val reader = Reads[T] { jsValue =>
-//    jsValue.validate[Raw].flatMap { raw =>
-//      build(raw).fold(
-//        error => JsError(error.message),
-//        t => JsSuccess(t)
-//      )
-//    }
-//  }
-
-//  private val writer = Writes[T](t => Json.toJson(write(t)))
-//  implicit val json: Format[T] = Format[T](reader, writer)
+  implicit val json: Codec[T] = Codec.from(
+    d.emap(raw => build(raw).left.map(err => err.message)),
+    e.contramap[T](write)
+  )
   implicit val ordering: Ordering[T] = o.on(write)
 
   def build(input: Raw): Either[ErrorMessage, T]
-
   def write(t: T): Raw
-
-  def defaultError(in: Raw): ErrorMessage =
-    ErrorMessage(s"Invalid input: '$in'.")
+  def defaultError(in: Raw): ErrorMessage = ErrorMessage(s"Invalid input: '$in'.")
 }
 
 abstract class WrappedEnum[T <: WrappedString] extends StringEnumCompanion[T] {

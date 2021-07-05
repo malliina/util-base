@@ -25,7 +25,7 @@ class StorageSize(bytes: Long) {
   /**
     * @return a string of format 'n units'
     */
-  override def toString =
+  override def toString: String =
     if (toTeras > 10) s"$toTeras terabytes"
     else if (toGigs > 10) s"$toGigs gigabytes"
     else if (toMegs > 10) s"$toMegs megabytes"
@@ -36,6 +36,8 @@ class StorageSize(bytes: Long) {
 object StorageSize {
   val empty = new StorageSize(0)
 
-  implicit val encoder: Encoder[StorageSize] = Encoder.encodeLong.contramap[StorageSize](_.toBytes)
-  implicit val decoder: Decoder[StorageSize] = Decoder.decodeLong.map(_.bytes)
+  implicit val json: Codec[StorageSize] = Codec.from(
+    Decoder.decodeLong.map(_.bytes),
+    Encoder.encodeLong.contramap[StorageSize](_.toBytes)
+  )
 }
