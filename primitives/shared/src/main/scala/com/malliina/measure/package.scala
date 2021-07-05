@@ -15,26 +15,20 @@ package object measure {
   }
 
   implicit final class DistanceDoubleM(val amount: Double)
-      extends AnyVal
-      with DistanceConversionsM {
+    extends AnyVal
+    with DistanceConversionsM {
     protected def asMeters(multiplier: Double): Double = multiplier * amount
   }
 
   trait DistanceConversionsM extends Any {
     protected def asDistance(multiplier: Double): DistanceM = new DistanceM(asMeters(multiplier))
-
     protected def asMeters(multiplier: Double): Double
 
     def mm = millimeters
-
     def millimeters = asDistance(1.0d / k)
-
     def m = meters
-
     def meters = asDistance(1)
-
     def km = kilometers
-
     def kilometers = asDistance(k)
   }
 
@@ -47,8 +41,8 @@ package object measure {
   }
 
   implicit final class SpeedDoubleM(private val amount: Double)
-      extends AnyVal
-      with SpeedConversionsM {
+    extends AnyVal
+    with SpeedConversionsM {
     protected def asMps(multiplier: Double): Double = multiplier * amount
   }
 
@@ -58,41 +52,32 @@ package object measure {
     protected def asMps(multiplier: Double): Double
 
     def `m/s`: SpeedM = metersPerSecond
-
     def mps = metersPerSecond
-
     def metersPerSecond = asSpeed(1)
-
     def kmh = asSpeed(1d / SpeedM.meterPerSecondInKmh)
-
     def kn = knots
-
     def knots = asSpeed(1d / SpeedM.meterPerSecondInKmh * SpeedM.knotInKmh)
   }
 
   implicit final class TemperatureInt(private val amount: Int)
-      extends AnyVal
-      with TemperatureConversions {
+    extends AnyVal
+    with TemperatureConversions {
     def celsius = asCelsius(amount)
-
     def fahrenheit = fromFahrenheit(amount)
-
     def kelvin = fromKelvin(amount)
   }
 
   implicit final class TemperatureLong(private val amount: Long)
-      extends AnyVal
-      with TemperatureConversions {
+    extends AnyVal
+    with TemperatureConversions {
     def celsius = asCelsius(amount)
-
     def fahrenheit = fromFahrenheit(amount)
-
     def kelvin = fromKelvin(amount)
   }
 
   implicit final class TemperatureDouble(private val amount: Double)
-      extends AnyVal
-      with TemperatureConversions {
+    extends AnyVal
+    with TemperatureConversions {
     def celsius = asCelsius(amount)
 
     def fahrenheit = fromFahrenheit(amount)
@@ -102,15 +87,13 @@ package object measure {
 
   trait TemperatureConversions extends Any {
     protected def asCelsius(celsius: Double): Temperature = new Temperature(celsius)
-
     protected def fromFahrenheit(f: Double) = asCelsius(Temperature.fahrenheitToCelsius(f))
-
     protected def fromKelvin(k: Double) = asCelsius(Temperature.kelvinToCelsius(k))
   }
 
   implicit final class DegreeDouble(private val amount: Double)
-      extends AnyVal
-      with DegreeConversions {
+    extends AnyVal
+    with DegreeConversions {
     def dd = asDegree(amount)
   }
 

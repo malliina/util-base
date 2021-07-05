@@ -1,26 +1,23 @@
 package com.malliina.values
 
-import play.api.libs.json._
+import io.circe._
+import scala.util.{Success, Failure}
 
 trait RangeValidator[T, U] extends ValueValidator[T, U] {
   def empty = build(Default)
-
   lazy val MinValue = build(Min)
-
   lazy val MaxValue = build(Max)
-
   def Default: T = Min
-
   def Min: T
-
   def Max: T
 
-  def jsonFormat(implicit format: Format[T]) = new Format[U] {
-    override def reads(json: JsValue): JsResult[U] =
-      json.validate[T].flatMap(i => from(i)
-        .map(c => JsSuccess(c))
-        .getOrElse(JsError(s"Value out of range: $i, must be within: [$Min, $Max]")))
-
-    override def writes(o: U): JsValue = Json.toJson(strip(o))
-  }
+//  def encoder[T](implicit e: Encoder[T]): Encoder[U] =
+//    e.contramap(t => strip(t))
+//
+//  def decoder[T](implicit d: Decoder[T]): Decoder[U] =
+//    d.emapTry(t =>
+//      from(t)
+//        .map(u => Success(u))
+//        .getOrElse(Failure(new Exception(s"Value out of range: $t, must be within: [$Min, $Max]")))
+//    )
 }

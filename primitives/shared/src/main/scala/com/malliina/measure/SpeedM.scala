@@ -1,8 +1,7 @@
 package com.malliina.measure
 
 import com.malliina.measure.SpeedM.{knotInKmh, meterPerSecondInKmh}
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{Format, Reads, Writes}
+import io.circe._
 
 /**
   * @param mps meters per second
@@ -11,9 +10,7 @@ case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
   override def compare(that: SpeedM): Int = mps compare that.toMps
 
   def toMps = mps
-
   def toKmh: Double = mps * meterPerSecondInKmh
-
   def toKnots = toKmh / knotInKmh
 
   def +(other: SpeedM): SpeedM = SpeedM(toMps + other.toMps)
@@ -27,7 +24,6 @@ case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
     * @return a string of format 'n units'
     */
   def formatKmh = s"$toKmh kmh"
-
   def formatKnots = s"$toKnots kn"
 
   override def toString = formatMs
@@ -36,21 +32,14 @@ case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
 object SpeedM {
   val zero = new SpeedM(0)
 
-  val knotInKmh = 1.852D
-  val meterPerSecondInKmh = 3.6D
+  val knotInKmh = 1.852d
+  val meterPerSecondInKmh = 3.6d
 
-  val kmhJson: Format[SpeedM] = Format[SpeedM](
-    Reads(_.validate[Double].map(kmh => apply(kmh / meterPerSecondInKmh))),
-    Writes(size => toJson(size.toKmh))
-  )
+  val kmhEncoder: Encoder[SpeedM] = Encoder.encodeDouble.contramap(_.toKmh)
+  val kmhDecoder: Decoder[SpeedM] =
+    Decoder.decodeDouble.map(kmh => apply(kmh / meterPerSecondInKmh))
 
-  implicit val knotsJson: Format[SpeedM] = Format[SpeedM](
-    Reads(_.validate[Double].map(kn => apply(kn * knotInKmh / meterPerSecondInKmh))),
-    Writes(size => toJson(size.toKnots))
-  )
-
-  /**
-    * @param mps meters per second
-    */
-  def apply(mps: Double): SpeedM = new SpeedM(mps)
+  implicit val knotsEncoder: Encoder[SpeedM] = Encoder.encodeDouble.contramap(_.toKnots)
+  implicit val knotsDecoder: Decoder[SpeedM] =
+    Decoder.decodeDouble.map(kn => apply(kn * knotInKmh / meterPerSecondInKmh))
 }

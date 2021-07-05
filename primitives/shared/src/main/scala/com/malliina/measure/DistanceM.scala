@@ -1,8 +1,7 @@
 package com.malliina.measure
 
 import com.malliina.measure.DistanceM.k
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{Format, Reads, Writes}
+import io.circe._
 
 /**
   *
@@ -40,8 +39,6 @@ object DistanceM {
 
   def apply(meters: Double): DistanceM = new DistanceM(meters)
 
-  implicit val json: Format[DistanceM] = Format[DistanceM](
-    Reads(_.validate[Double].map(m => DistanceM(m))),
-    Writes(size => toJson(size.toMeters))
-  )
+  implicit val encoder: Encoder[DistanceM] = Encoder.encodeDouble.contramap(_.toMeters)
+  implicit val decoder: Decoder[DistanceM] = Decoder.decodeDouble.map(m => DistanceM(m))
 }

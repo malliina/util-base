@@ -1,8 +1,5 @@
 package com.malliina.http
 
-import com.fasterxml.jackson.core.JsonParseException
-import play.api.libs.json.Json
-
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -12,10 +9,10 @@ class OkClientTests extends munit.FunSuite {
     assert(res.isSuccess)
   }
 
-  test("parse non-json") {
-    val jpe = intercept[JsonParseException] {
-      Json.parse("""1: "wrong"""")
-    }
-    assert(jpe.getMessage.startsWith("Unexpected character"))
-  }
+//  test("parse non-json") {
+//    val jpe = intercept[JsonParseException] {
+//      Json.parse("""1: "wrong"""")
+//    }
+//    assert(jpe.getMessage.startsWith("Unexpected character"))
+//  }
 }
