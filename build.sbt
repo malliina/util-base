@@ -1,24 +1,23 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val munit = "org.scalameta" %% "munit" % "0.7.23" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.27" % Test
 
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "2.13.5",
-    crossScalaVersions := scalaVersion.value :: "2.12.13" :: Nil,
+    scalaVersion := "3.0.0",
+    crossScalaVersions := scalaVersion.value :: "2.13.5" :: "2.12.13" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
-    javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-    scalacOptions += "-target:jvm-1.8",
     testFrameworks += new TestFramework("munit.Framework")
   )
 )
 
+val circeModules = Seq("circe-generic", "circe-parser")
+
 val moduleSettings = Seq(
-  libraryDependencies ++= Seq(
-    "com.typesafe.play" %% "play-json" % "2.9.2",
+  libraryDependencies ++= circeModules.map(m => "io.circe" %% m % "0.14.1") ++ Seq(
     munit
   )
 )
@@ -57,8 +56,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.5.0",
-      "org.typelevel" %% "cats-effect" % "2.4.1",
+      "org.typelevel" %% "cats-core" % "2.6.1",
+      "org.typelevel" %% "cats-effect" % "2.5.1",
       munit
     ),
     releaseProcess := tagReleaseProcess.value

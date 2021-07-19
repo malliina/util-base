@@ -1,11 +1,13 @@
 package com.malliina.http
 
+import io.circe.{Decoder, Encoder, Json}
+import io.circe.syntax._
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardCopyOption}
 import com.malliina.http.OkClient.MultiPartFile
 import com.malliina.storage.{StorageLong, StorageSize}
 import okhttp3._
-import play.api.libs.json.{JsValue, Json, Reads, Writes}
 
 import java.io.Closeable
 
@@ -14,7 +16,7 @@ trait HttpClient[F[_]] extends Closeable {
     def flatMap[U](code: T => F[U]): F[U] = HttpClient.this.flatMap(f)(code)
   }
 
-  def getAs[T: Reads](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
+  def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
     get(url, headers).flatMap(r => parse[T](r, url))
 
   def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[OkHttpResponse] = {
@@ -22,21 +24,21 @@ trait HttpClient[F[_]] extends Closeable {
     execute(req.get().build())
   }
 
-  def postAs[W: Writes, T: Reads](
+  def postAs[W: Encoder, T: Decoder](
     url: FullUrl,
     json: W,
     headers: Map[String, String] = Map.empty
   ): F[T] =
-    postJson(url, Json.toJson(json), headers).flatMap(r => parse[T](r, url))
+    postJson(url, json.asJson, headers).flatMap(r => parse[T](r, url))
 
-  def postJsonAs[T: Reads](
+  def postJsonAs[T: Decoder](
     url: FullUrl,
-    json: JsValue,
+    json: Json,
     headers: Map[String, String] = Map.empty
   ): F[T] =
     postJson(url, json, headers).flatMap(r => parse[T](r, url))
 
-  def postFormAs[T: Reads](
+  def postFormAs[T: Decoder](
     url: FullUrl,
     form: Map[String, String],
     headers: Map[String, String] = Map.empty
@@ -45,10 +47,10 @@ trait HttpClient[F[_]] extends Closeable {
 
   def postJson(
     url: FullUrl,
-    json: JsValue,
+    json: Json,
     headers: Map[String, String] = Map.empty
   ): F[OkHttpResponse] =
-    post(url, RequestBody.create(Json.stringify(json), OkClient.jsonMediaType), headers)
+    post(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
 
   def postFile(
     url: FullUrl,
@@ -143,7 +145,7 @@ trait HttpClient[F[_]] extends Closeable {
     * @tparam T type to parse
     * @return a parsed response
     */
-  def parse[T: Reads](response: OkHttpResponse, url: FullUrl): F[T] =
+  def parse[T: Decoder](response: OkHttpResponse, url: FullUrl): F[T] =
     if (response.isSuccess) {
       response
         .parse[T]

@@ -1,7 +1,6 @@
 package com.malliina.measure
 
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{Format, Reads, Writes}
+import io.circe._
 
 /**
   * @param celsius degrees in Celsius scale
@@ -27,25 +26,22 @@ case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature]
 }
 
 object Temperature {
-  private val kelvinDiff = 273.15D
+  private val kelvinDiff = 273.15d
   val zeroCelsius = new Temperature(0)
   val absoluteZero = new Temperature(-kelvinDiff)
 
-  implicit val celsiusJson: Format[Temperature] = Format[Temperature](
-    Reads(_.validate[Double].map(_.celsius)),
-    Writes(size => toJson(size.toCelsius))
+  implicit val celsiusJson: Codec[Temperature] = Codec.from(
+    Decoder.decodeDouble.map(_.celsius),
+    Encoder.encodeDouble.contramap[Temperature](_.toCelsius)
   )
 
-  val fahrenheitJson: Format[Temperature] = Format[Temperature](
-    Reads(_.validate[Double].map(_.fahrenheit)),
-    Writes(size => toJson(size.toFahrenheit))
+  val fahrenheitJson = Codec.from(
+    Decoder.decodeDouble.map(_.fahrenheit),
+    Encoder.encodeDouble.contramap[Temperature](_.toFahrenheit)
   )
 
   def celsiusToFahrenheit(c: Double): Double = c * 9 / 5 + 32
-
   def fahrenheitToCelsius(f: Double): Double = (f - 32) * 5 / 9
-
   def kelvinToCelsius(k: Double): Double = k - kelvinDiff
-
   def celsiusToKelvin(c: Double): Double = c + kelvinDiff
 }

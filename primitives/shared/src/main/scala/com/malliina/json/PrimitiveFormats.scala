@@ -1,13 +1,12 @@
 package com.malliina.json
 
-import play.api.libs.json.Json.toJson
-import play.api.libs.json._
+import io.circe._
 
 import scala.concurrent.duration.{Duration, DurationDouble}
 
 object PrimitiveFormats {
-  implicit val durationFormat: Format[Duration] = Format[Duration](
-    Reads(_.validate[Double].map(_.seconds)),
-    Writes(d => toJson(d.toSeconds))
+  implicit val durationCodec: Codec[Duration] = Codec.from(
+    Decoder.decodeDouble.map(_.seconds),
+    Encoder.encodeDouble.contramap[Duration](_.toSeconds.toDouble)
   )
 }

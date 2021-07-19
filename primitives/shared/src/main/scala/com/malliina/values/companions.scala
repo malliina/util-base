@@ -1,6 +1,7 @@
 package com.malliina.values
 
-import play.api.libs.json._
+import io.circe._, io.circe.generic.auto._
+import scala.util.{Try, Failure, Success}
 
 trait Identifier extends Any {
   def id: String
@@ -45,34 +46,28 @@ abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String,
   override def write(t: T): String = t.value
 }
 
-abstract class JsonCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw])
-    extends ValidatingCompanion[Raw, T] {
+abstract class JsonCompanion[Raw, T](implicit d: Decoder[Raw], e: Encoder[Raw], o: Ordering[Raw])
+  extends ValidatingCompanion[Raw, T] {
   def apply(raw: Raw): T
 
   override def build(input: Raw): Either[ErrorMessage, T] =
     Right(apply(input))
 }
 
-abstract class ValidatingCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw]) {
-  private val reader = Reads[T] { jsValue =>
-    jsValue.validate[Raw].flatMap { raw =>
-      build(raw).fold(
-        error => JsError(error.message),
-        t => JsSuccess(t)
-      )
-    }
-  }
-
-  private val writer = Writes[T](t => Json.toJson(write(t)))
-  implicit val json: Format[T] = Format[T](reader, writer)
+abstract class ValidatingCompanion[Raw, T](
+  implicit d: Decoder[Raw],
+  e: Encoder[Raw],
+  o: Ordering[Raw]
+) {
+  implicit val json: Codec[T] = Codec.from(
+    d.emap(raw => build(raw).left.map(err => err.message)),
+    e.contramap[T](write)
+  )
   implicit val ordering: Ordering[T] = o.on(write)
 
   def build(input: Raw): Either[ErrorMessage, T]
-
   def write(t: T): Raw
-
-  def defaultError(in: Raw): ErrorMessage =
-    ErrorMessage(s"Invalid input: '$in'.")
+  def defaultError(in: Raw): ErrorMessage = ErrorMessage(s"Invalid input: '$in'.")
 }
 
 abstract class WrappedEnum[T <: WrappedString] extends StringEnumCompanion[T] {
@@ -84,13 +79,11 @@ abstract class StringEnumCompanion[T] extends EnumCompanion[String, T] {
     all.find(i => write(i).toLowerCase == input.toLowerCase).toRight(defaultError(input))
 }
 
-abstract class EnumCompanion[Raw, T](implicit f: Format[Raw], o: Ordering[Raw])
-    extends ValidatingCompanion[Raw, T] {
+abstract class EnumCompanion[Raw, T](implicit f: Decoder[Raw], e: Encoder[Raw], o: Ordering[Raw])
+  extends ValidatingCompanion[Raw, T] {
 
   def all: Seq[T]
-
   def resolveName(item: T): Raw = write(item)
-
   private def allNames = all.map(write).mkString(", ")
 
   def build(input: Raw): Either[ErrorMessage, T] =

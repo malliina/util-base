@@ -1,14 +1,13 @@
 package com.malliina.storage
 
-import play.api.libs.json.Json.toJson
-import play.api.libs.json.{Format, Reads, Writes}
+import io.circe._
 
 class StorageSize(bytes: Long) {
   private val k = 1024
 
   def toBytes = bytes
   def toKilos = bytes / k
-  def toKilosDouble = 1.0D * bytes / k
+  def toKilosDouble = 1.0d * bytes / k
   def toMegs = toKilos / k
   def toMegsDouble = toKilosDouble / k
   def toGigs = toMegs / k
@@ -26,7 +25,7 @@ class StorageSize(bytes: Long) {
   /**
     * @return a string of format 'n units'
     */
-  override def toString =
+  override def toString: String =
     if (toTeras > 10) s"$toTeras terabytes"
     else if (toGigs > 10) s"$toGigs gigabytes"
     else if (toMegs > 10) s"$toMegs megabytes"
@@ -37,8 +36,8 @@ class StorageSize(bytes: Long) {
 object StorageSize {
   val empty = new StorageSize(0)
 
-  implicit val json: Format[StorageSize] = Format[StorageSize](
-    Reads(_.validate[Long].map(_.bytes)),
-    Writes(size => toJson(size.toBytes))
+  implicit val json: Codec[StorageSize] = Codec.from(
+    Decoder.decodeLong.map(_.bytes),
+    Encoder.encodeLong.contramap[StorageSize](_.toBytes)
   )
 }

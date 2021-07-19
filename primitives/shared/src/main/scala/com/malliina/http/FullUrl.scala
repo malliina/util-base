@@ -2,8 +2,9 @@ package com.malliina.http
 
 import java.net.URLEncoder
 import java.util.regex.Pattern
-
 import com.malliina.values.{ErrorMessage, ValidatingCompanion}
+
+import java.nio.charset.StandardCharsets
 
 case class FullUrl(proto: String, hostAndPort: String, uri: String) {
   val host = hostAndPort.takeWhile(_ != ':')
@@ -27,7 +28,7 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     * @return a new URL with the query strings applied
     */
   def query(map: Map[String, String]): FullUrl = {
-    val encoded = map.mapValues(v => URLEncoder.encode(v, "UTF-8"))
+    val encoded = map.mapValues(v => URLEncoder.encode(v, StandardCharsets.UTF_8.name()))
     withQuery(encoded.toSeq: _*)
   }
 

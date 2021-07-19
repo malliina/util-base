@@ -1,8 +1,9 @@
 package com.malliina.http
 
+import io.circe._
+import io.circe.parser._
 import com.malliina.values.StringEnumCompanion
 import okhttp3.Response
-import play.api.libs.json.{JsError, JsValue, Json, Reads}
 
 import scala.collection.JavaConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 import scala.util.Try
@@ -32,13 +33,8 @@ trait HttpResponse {
   def headers: Map[String, Seq[String]]
   def code: Int
   def status: Int = code
-
-  def json: Either[JsError, JsValue] =
-    Try(Json.parse(asString)).toOption.toRight(JsError(s"Not JSON: '$asString'."))
-
-  def parse[T: Reads]: Either[JsError, T] =
-    json.flatMap(_.validate[T].asEither.left.map(err => JsError(err)))
-
+  def json: Either[ParsingFailure, Json] = io.circe.parser.parse(asString)
+  def parse[T: Decoder]: Either[io.circe.Error, T] = decode[T](asString)
   def isSuccess: Boolean = code >= 200 && code < 300
 }
 
@@ -51,10 +47,11 @@ sealed trait ResponseError {
 
 case class StatusError(response: OkHttpResponse, url: FullUrl) extends ResponseError
 
-case class JsonError(error: JsError, response: OkHttpResponse, url: FullUrl) extends ResponseError
+case class JsonError(error: io.circe.Error, response: OkHttpResponse, url: FullUrl)
+  extends ResponseError
 
 class ResponseException(val error: ResponseError)
-    extends Exception(s"Request to '${error.url}' failed. Status ${error.code}.") {
+  extends Exception(s"Request to '${error.url}' failed. Status ${error.code}.") {
   def response = error.response
 }
 
