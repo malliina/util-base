@@ -35,7 +35,7 @@ object SpeedM {
   val knotInKmh = 1.852d
   val meterPerSecondInKmh = 3.6d
 
-  val kmhJson = Codec.from(
+  val kmhJson: Codec[SpeedM] = Codec.from(
     Decoder.decodeDouble.map(kmh => apply(kmh / meterPerSecondInKmh)),
     Encoder.encodeDouble.contramap(_.toKmh)
   )

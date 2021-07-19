@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val munit = "org.scalameta" %% "munit" % "0.7.26" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.27" % Test
 
 inThisBuild(
   Seq(
