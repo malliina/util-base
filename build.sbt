@@ -6,7 +6,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.0.0",
-    crossScalaVersions := scalaVersion.value :: "2.13.5" :: "2.12.13" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.6" :: "2.12.13" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -58,6 +58,7 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.6.1",
       "org.typelevel" %% "cats-effect" % "2.5.1",
+      "co.fs2" %% "fs2-core" % "2.5.9",
       munit
     ),
     releaseProcess := tagReleaseProcess.value

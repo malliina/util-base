@@ -1,10 +1,10 @@
 package com.malliina.http.io
 
 import cats.MonadError
-import cats.effect.IO
+import cats.effect.{Concurrent, ContextShift, IO}
 import com.malliina.http.io.HttpClientIO.CallOps
-import com.malliina.http.{HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
-import okhttp3._
+import com.malliina.http.{FullUrl, HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
+import okhttp3.*
 
 import java.io.IOException
 
@@ -30,6 +30,13 @@ class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttp
     raw(request).bracket(consume)(r => IO(r.close()))
   override def raw(request: Request): IO[Response] =
     client.newCall(request).io
+  def socket(
+    url: FullUrl,
+    headers: Map[String, String],
+    cs: ContextShift[IO]
+  ): IO[WebSocketIO] = {
+    WebSocketIO(url, headers, client)(cs)
+  }
 }
 
 abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {
