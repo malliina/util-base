@@ -1,7 +1,7 @@
 package com.malliina.http.io
 
 import cats.MonadError
-import cats.effect.{Concurrent, ContextShift, IO}
+import cats.effect.{Concurrent, ContextShift, IO, Timer}
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{FullUrl, HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
 import okhttp3.*
@@ -33,9 +33,10 @@ class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttp
   def socket(
     url: FullUrl,
     headers: Map[String, String],
-    cs: ContextShift[IO]
-  ): IO[WebSocketIO] = {
-    WebSocketIO(url, headers, client)(cs)
+    cs: ContextShift[IO],
+    timer: Timer[IO]
+  ): IO[ReconnectingSocket] = {
+    WebSocketIO(url, headers, client)(cs, timer)
   }
 }
 

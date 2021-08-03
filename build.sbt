@@ -51,16 +51,19 @@ val okClient = Project("okclient", file("okclient"))
     releaseProcess := tagReleaseProcess.value
   )
 
+val logbackModules = Seq("classic", "core")
+
 val okClientIo = Project("okclient-io", file("okclient-io"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(okClient)
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-effect" % "2.5.1",
-      "co.fs2" %% "fs2-core" % "2.5.9",
-      munit
-    ),
+    libraryDependencies ++=
+      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.4") ++ Seq(
+        "org.typelevel" %% "cats-core" % "2.6.1",
+        "org.typelevel" %% "cats-effect" % "2.5.1",
+        "co.fs2" %% "fs2-core" % "2.5.9",
+        munit
+      ),
     releaseProcess := tagReleaseProcess.value
   )
 
