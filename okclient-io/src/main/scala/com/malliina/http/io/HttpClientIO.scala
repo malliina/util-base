@@ -4,7 +4,7 @@ import cats.MonadError
 import cats.effect.{Concurrent, ContextShift, IO, Timer}
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{FullUrl, HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
-import okhttp3.*
+import okhttp3._
 
 import java.io.IOException
 
@@ -35,9 +35,7 @@ class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttp
     headers: Map[String, String],
     cs: ContextShift[IO],
     timer: Timer[IO]
-  ): IO[ReconnectingSocket] = {
-    WebSocketIO(url, headers, client)(cs, timer)
-  }
+  ): IO[WebSocketIO] = WebSocketIO(url, headers, client)(cs, timer)
 }
 
 abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {

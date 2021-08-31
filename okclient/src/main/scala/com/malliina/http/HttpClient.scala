@@ -2,13 +2,13 @@ package com.malliina.http
 
 import com.malliina.http.HttpClient.requestFor
 import io.circe.{Decoder, Encoder, Json}
-import io.circe.syntax.*
+import io.circe.syntax._
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardCopyOption}
 import com.malliina.http.OkClient.MultiPartFile
 import com.malliina.storage.{StorageLong, StorageSize}
-import okhttp3.*
+import okhttp3._
 
 import java.io.Closeable
 
