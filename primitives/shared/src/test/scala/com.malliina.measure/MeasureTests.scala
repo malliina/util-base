@@ -8,7 +8,7 @@ class MeasureTests extends munit.FunSuite {
   }
 
   test("dd to dms") {
-    val dd = new DecimalDegrees(38.8897)
+    val dd = DecimalDegrees(38.8897)
     val dms = dd.dms
     assert(dms.degree == 38)
     assert(dms.minute == 53)
@@ -38,7 +38,7 @@ class MeasureTests extends munit.FunSuite {
   }
 
   test("knots to meters per second") {
-    val ms = new SpeedIntM(3).knots.toMps
+    val ms = 3.knots.toMps
     val expected = 1.5433333333333334d
     assert(math.abs(ms - expected) < 0.001)
   }

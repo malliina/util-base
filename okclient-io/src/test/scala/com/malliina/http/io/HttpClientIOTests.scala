@@ -1,7 +1,7 @@
 package com.malliina.http.io
 
-import cats.effect.{ContextShift, IO, Timer}
-import cats.effect.concurrent.Ref
+import cats.effect.IO
+import cats.effect.kernel.{Ref, Temporal}
 import com.malliina.http.FullUrl
 import com.malliina.http.HttpClient.requestFor
 import com.malliina.http.io.SocketEvent.{BytesMessage, Open}
@@ -12,6 +12,7 @@ import okhttp3.WebSocket.Factory
 import okio.ByteString
 import fs2.concurrent.Topic
 import fs2.Stream
+import cats.effect.unsafe.implicits.global
 
 import concurrent.duration.DurationInt
 import java.nio.charset.StandardCharsets
@@ -19,8 +20,7 @@ import java.util.Base64
 
 class HttpClientIOTests extends FunSuite {
   val Authorization = "Authorization"
-  private implicit val cs: ContextShift[IO] = IO.contextShift(munitExecutionContext)
-  private implicit val timer: Timer[IO] = IO.timer(munitExecutionContext)
+  private implicit val timer: Temporal[IO] = Temporal[IO]
 
   test("can make io request".ignore) {
     val client = HttpClientIO()
@@ -38,7 +38,7 @@ class HttpClientIOTests extends FunSuite {
       client.client
     ).unsafeRunSync()
     val events: IO[Vector[SocketEvent]] = socket.events.take(5).compile.toVector
-    events.unsafeRunAsyncAndForget()
+    events.unsafeRunAndForget()
     Thread.sleep(3000)
     socket.close()
     Thread.sleep(8000)
