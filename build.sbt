@@ -1,12 +1,12 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
-val munit = "org.scalameta" %% "munit" % "0.7.27" % Test
+val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
 
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "3.0.0",
-    crossScalaVersions := scalaVersion.value :: "2.13.5" :: "2.12.13" :: Nil,
+    scalaVersion := "3.0.1",
+    crossScalaVersions := scalaVersion.value :: "2.13.6" :: "2.12.13" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -51,15 +51,17 @@ val okClient = Project("okclient", file("okclient"))
     releaseProcess := tagReleaseProcess.value
   )
 
+val logbackModules = Seq("classic", "core")
+
 val okClientIo = Project("okclient-io", file("okclient-io"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(okClient)
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-effect" % "2.5.1",
-      munit
-    ),
+    libraryDependencies ++=
+      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.6") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.1.2",
+        munit
+      ),
     releaseProcess := tagReleaseProcess.value
   )
 

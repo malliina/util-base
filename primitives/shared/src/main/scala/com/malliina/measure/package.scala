@@ -25,11 +25,11 @@ package object measure {
     protected def asMeters(multiplier: Double): Double
 
     def mm = millimeters
-    def millimeters = asDistance(1.0d / k)
+    def millimeters = asDistance(1.0d / k.toDouble)
     def m = meters
     def meters = asDistance(1)
     def km = kilometers
-    def kilometers = asDistance(k)
+    def kilometers = asDistance(k.toDouble)
   }
 
   implicit final class SpeedIntM(private val amount: Int) extends AnyVal with SpeedConversionsM {
@@ -70,18 +70,16 @@ package object measure {
   implicit final class TemperatureLong(private val amount: Long)
     extends AnyVal
     with TemperatureConversions {
-    def celsius = asCelsius(amount)
-    def fahrenheit = fromFahrenheit(amount)
-    def kelvin = fromKelvin(amount)
+    def celsius = asCelsius(amount.toDouble)
+    def fahrenheit = fromFahrenheit(amount.toDouble)
+    def kelvin = fromKelvin(amount.toDouble)
   }
 
   implicit final class TemperatureDouble(private val amount: Double)
     extends AnyVal
     with TemperatureConversions {
     def celsius = asCelsius(amount)
-
     def fahrenheit = fromFahrenheit(amount)
-
     def kelvin = fromKelvin(amount)
   }
 
@@ -98,11 +96,11 @@ package object measure {
   }
 
   implicit final class DegreeInt(private val amount: Int) extends AnyVal with DegreeConversions {
-    def dd = asDegree(amount)
+    def dd = asDegree(amount.toDouble)
   }
 
   implicit final class DegreeLong(private val amount: Long) extends AnyVal with DegreeConversions {
-    def dd = asDegree(amount)
+    def dd = asDegree(amount.toDouble)
   }
 
   trait DegreeConversions extends Any {

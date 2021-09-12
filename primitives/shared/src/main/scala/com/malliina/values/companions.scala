@@ -59,6 +59,12 @@ abstract class ValidatingCompanion[Raw, T](
   e: Encoder[Raw],
   o: Ordering[Raw]
 ) {
+  implicit val decoder: Decoder[String] = new Decoder[String] {
+    final def apply(c: HCursor): Decoder.Result[String] =
+      for {
+        owner <- c.downField("OMISTAJA").as[String]
+      } yield ""
+  }
   implicit val json: Codec[T] = Codec.from(
     d.emap(raw => build(raw).left.map(err => err.message)),
     e.contramap[T](write)

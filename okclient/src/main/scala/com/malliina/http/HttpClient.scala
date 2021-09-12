@@ -1,5 +1,6 @@
 package com.malliina.http
 
+import com.malliina.http.HttpClient.requestFor
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax._
 
@@ -10,6 +11,13 @@ import com.malliina.storage.{StorageLong, StorageSize}
 import okhttp3._
 
 import java.io.Closeable
+
+object HttpClient {
+  def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
+    headers.foldLeft(new Request.Builder().url(url.url)) {
+      case (r, (key, value)) => r.addHeader(key, value)
+    }
+}
 
 trait HttpClient[F[_]] extends Closeable {
   implicit class FOps[T](f: F[T]) {
@@ -130,11 +138,6 @@ trait HttpClient[F[_]] extends Closeable {
   def execute(request: Request): F[OkHttpResponse]
 
   def raw(request: Request): F[Response]
-
-  def requestFor(url: FullUrl, headers: Map[String, String]) =
-    headers.foldLeft(new Request.Builder().url(url.url)) {
-      case (r, (key, value)) => r.addHeader(key, value)
-    }
 
   /** Parses the response as a T.
     *
