@@ -20,4 +20,10 @@ class WebSocketIOTests extends FunSuite {
       .unsafeRunSync()
     assertEquals(list, Vector.fill(4)("1"))
   }
+
+  test("repeat ends on error") {
+    val repeating = Stream.eval(IO.raiseError(new Exception("boom"))).repeat
+    val errors = repeating.compile.toList.unsafeRunSync()
+    assertEquals(errors.length, 1)
+  }
 }

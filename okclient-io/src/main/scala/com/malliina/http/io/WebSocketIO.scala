@@ -97,13 +97,16 @@ class WebSocketIO(
     Stream.eval(IO(log.info(s"Reconnecting to '$url' in $backoffTime..."))).flatMap { _ =>
       Stream.sleep(backoffTime).map(_ => Idle)
     }
-  private val untilFailure = allEvents.drop(1).takeWhile {
+  private val untilFailure = allEvents.takeWhile {
     case Failure(_, _, _) => false
     case _                => true
   }
   val events: Stream[IO, SocketEvent] = Stream
     .eval(connectSocket)
     .flatMap(_ => untilFailure ++ backoff)
+    .handleErrorWith(t =>
+      Stream.eval(IO(log.warn(s"Connection to '$url' failed exceptionally.", t))) >> backoff
+    )
     .repeat
     .interruptWhen(interrupter)
 
