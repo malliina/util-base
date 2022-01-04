@@ -5,8 +5,8 @@ val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "3.0.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.6" :: "2.12.13" :: Nil,
+    scalaVersion := "3.1.0",
+    crossScalaVersions := scalaVersion.value :: "2.13.7" :: "2.12.15" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -45,7 +45,7 @@ val okClient = Project("okclient", file("okclient"))
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.9.1",
+      "com.squareup.okhttp3" % "okhttp" % "4.9.3",
       munit
     ),
     releaseProcess := tagReleaseProcess.value
@@ -58,8 +58,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.6") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.1.2",
+      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.10") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.2.3",
         munit
       ),
     releaseProcess := tagReleaseProcess.value
