@@ -41,7 +41,7 @@ abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
 }
 
 abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
-  implicit val readable: Readable[T] = Readable.string.flatMap(s => build(s))
+  implicit val readable: Readable[T] = Readable.string.emap(s => build(s))
 
   override def write(t: T): String = t.value
 }
@@ -59,12 +59,6 @@ abstract class ValidatingCompanion[Raw, T](
   e: Encoder[Raw],
   o: Ordering[Raw]
 ) {
-  implicit val decoder: Decoder[String] = new Decoder[String] {
-    final def apply(c: HCursor): Decoder.Result[String] =
-      for {
-        owner <- c.downField("OMISTAJA").as[String]
-      } yield ""
-  }
   implicit val json: Codec[T] = Codec.from(
     d.emap(raw => build(raw).left.map(err => err.message)),
     e.contramap[T](write)

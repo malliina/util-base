@@ -2,6 +2,7 @@ package com.malliina.http.io
 
 import cats.MonadError
 import cats.effect.{Concurrent, IO}
+import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{FullUrl, HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
 import okhttp3._
@@ -9,6 +10,8 @@ import okhttp3._
 import java.io.IOException
 
 object HttpClientIO {
+  val resource = Resource.make(IO(HttpClientIO()))(c => IO(c.close()))
+
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
 
   implicit class CallOps(val call: Call) extends AnyVal {
@@ -35,7 +38,7 @@ class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttp
   def socket(
     url: FullUrl,
     headers: Map[String, String]
-  ): IO[WebSocketIO] = WebSocketIO(url, headers, client)
+  ): Resource[IO, WebSocketIO] = WebSocketIO(url, headers, client)
 }
 
 abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {

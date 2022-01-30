@@ -1,17 +1,18 @@
 package com.malliina.http.io
 
 import cats.effect.IO
-import cats.effect.kernel.Temporal
-import cats.effect.unsafe.implicits.global
+import cats.effect.kernel.{Temporal, Resource}
+import cats.effect.std.Dispatcher
 import com.malliina.http.FullUrl
-import com.malliina.http.io.SocketEvent._
+import com.malliina.http.io.SocketEvent.*
 import com.malliina.http.io.WebSocketIO.log
+import com.malliina.util.AppLogger
 import com.malliina.values.Username
 import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
-import io.circe._
+import io.circe.*
 import io.circe.syntax.EncoderOps
-import okhttp3._
+import okhttp3.*
 import okio.ByteString
 import org.slf4j.LoggerFactory
 
@@ -19,22 +20,26 @@ import java.io.Closeable
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-trait WebSocketOps extends Closeable {
-  def open(): Unit
-  def send[T: Encoder](message: T): Boolean = sendMessage(message.asJson.noSpaces)
-  def sendMessage(s: String): Boolean
+trait WebSocketOps {
+//  def open(): IO[Unit]
+  def send[T: Encoder](message: T): IO[Boolean] = sendMessage(message.asJson.noSpaces)
+  def sendMessage(s: String): IO[Boolean]
 }
 
 object WebSocketIO {
-  private val log = LoggerFactory.getLogger(getClass)
+  private val log = AppLogger(getClass)
 
   def apply(url: FullUrl, headers: Map[String, String], client: OkHttpClient)(
     implicit t: Temporal[IO]
-  ): IO[WebSocketIO] =
+  ): Resource[IO, WebSocketIO] =
     for {
-      topic <- Topic[IO, SocketEvent]
-      interrupter <- SignallingRef[IO, Boolean](false)
-    } yield new WebSocketIO(url, headers, client, topic, interrupter)
+      topic <- Resource.eval(Topic[IO, SocketEvent])
+      interrupter <- Resource.eval(SignallingRef[IO, Boolean](false))
+      d <- Dispatcher[IO]
+      socket <- Resource.make(IO(new WebSocketIO(url, headers, client, topic, interrupter, d)))(s =>
+        s.close
+      )
+    } yield socket
 }
 
 class WebSocketIO(
@@ -42,7 +47,8 @@ class WebSocketIO(
   headers: Map[String, String],
   client: OkHttpClient,
   topic: Topic[IO, SocketEvent],
-  interrupter: SignallingRef[IO, Boolean]
+  interrupter: SignallingRef[IO, Boolean],
+  d: Dispatcher[IO]
 )(implicit t: Temporal[IO])
   extends WebSocketOps {
   private val backoffTime: FiniteDuration = 10.seconds
@@ -61,30 +67,32 @@ class WebSocketIO(
       )
   }
 
+  private def send(e: SocketEvent): Unit = d.unsafeRunAndForget(topic.publish1(e))
+
   private val listener: WebSocketListener = new WebSocketListener {
-    override def onClosed(webSocket: WebSocket, code: Int, reason: String) = {
+    override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closed  socket to '$url'.")
-      topic.push(Closed(webSocket, code, reason))
+      send(Closed(webSocket, code, reason))
     }
-    override def onClosing(webSocket: WebSocket, code: Int, reason: String) = {
+    override def onClosing(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closing socket to '$url'.")
-      topic.push(Closing(webSocket, code, reason))
+      send(Closing(webSocket, code, reason))
     }
-    override def onFailure(webSocket: WebSocket, t: Throwable, response: Response) = {
+    override def onFailure(webSocket: WebSocket, t: Throwable, response: Response): Unit = {
       log.warn(s"Socket to '$url' failed.", t)
-      topic.push(Failure(webSocket, Option(t), Option(response)))
+      send(Failure(webSocket, Option(t), Option(response)))
     }
-    override def onMessage(webSocket: WebSocket, text: String) = {
+    override def onMessage(webSocket: WebSocket, text: String): Unit = {
       log.debug(s"Received text '$text'.")
-      topic.push(TextMessage(webSocket, text))
+      send(TextMessage(webSocket, text))
     }
-    override def onMessage(webSocket: WebSocket, bytes: ByteString) = {
+    override def onMessage(webSocket: WebSocket, bytes: ByteString): Unit = {
       log.debug(s"Received bytes $bytes")
-      topic.push(BytesMessage(webSocket, bytes))
+      send(BytesMessage(webSocket, bytes))
     }
-    override def onOpen(webSocket: WebSocket, response: Response) = {
+    override def onOpen(webSocket: WebSocket, response: Response): Unit = {
       log.info(s"Opened socket to '$url'.")
-      topic.push(Open(webSocket, response))
+      send(Open(webSocket, response))
     }
   }
   val request = requestFor(url, headers).build()
@@ -119,15 +127,14 @@ class WebSocketIO(
       )
   }
 
-  def open(): Unit = events.compile.toList.unsafeRunAndForget()
+//  def open = events.compile.toList
 
-  def sendMessage(message: String): Boolean = active.get().exists(_.send(message))
+  def sendMessage(message: String): IO[Boolean] = IO(active.get().exists(_.send(message)))
 
-  def close(): Unit = {
-    log.info(s"Closing socket to '$url'...")
-    interrupter.set(true).unsafeRunSync()
-    active.get().foreach(_.cancel())
-  }
+  def close: IO[Unit] =
+    IO(log.info(s"Closing socket to '$url'...")) >>
+      interrupter.set(true) >>
+      IO(active.get().foreach(_.cancel()))
 
   def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
     headers.foldLeft(new Request.Builder().url(url.url)) {

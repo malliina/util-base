@@ -32,20 +32,22 @@ class HttpClientIOTests extends FunSuite {
 
   test("websocket".ignore) {
     val client = HttpClientIO()
-    val socket = WebSocketIO(
+    WebSocketIO(
       FullUrl.wss("logs.malliina.com", "/ws/sources"),
       Map(Authorization -> authorizationValue(Username("test"), "test123")),
       client.client
-    ).unsafeRunSync()
-    val events: IO[Vector[SocketEvent]] = socket.events.take(5).compile.toVector
-    events.unsafeRunAndForget()
-    Thread.sleep(3000)
-    socket.close()
-    Thread.sleep(8000)
-    socket.close()
-    Thread.sleep(8000)
-    socket.close()
-    client.close()
+    ).use { socket =>
+        val events: IO[Vector[SocketEvent]] = socket.events.take(5).compile.toVector
+        events.unsafeRunAndForget()
+        IO.sleep(3.seconds) >>
+          socket.close >>
+          IO.sleep(8.seconds) >>
+          socket.close >>
+          IO.sleep(8.seconds) >>
+          socket.close >>
+          IO(client.close())
+      }
+      .unsafeRunSync()
   }
 
   test("interruption".ignore) {

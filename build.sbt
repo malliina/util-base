@@ -5,8 +5,8 @@ val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "3.1.0",
-    crossScalaVersions := scalaVersion.value :: "2.13.7" :: "2.12.15" :: Nil,
+    scalaVersion := "3.1.1",
+    crossScalaVersions := scalaVersion.value :: "2.13.8" :: "2.12.15" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -29,7 +29,8 @@ val primitives = portableProject(JSPlatform, JVMPlatform)
 val primitivesJvm = primitives.jvm
 val primitivesJs = primitives.js
 
-val utilBase = Project("util-base", file("util-base"))
+val utilBase = project
+  .in(file("util-base"))
   .dependsOn(primitivesJvm)
   .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
@@ -40,7 +41,8 @@ val utilBase = Project("util-base", file("util-base"))
     releaseProcess := tagReleaseProcess.value
   )
 
-val okClient = Project("okclient", file("okclient"))
+val okClient = project
+  .in(file("okclient"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
@@ -65,9 +67,17 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
     releaseProcess := tagReleaseProcess.value
   )
 
+val config = project
+  .in(file("config"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(primitivesJvm)
+  .settings(
+    libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.1")
+  )
+
 val utilBaseRoot = project
   .in(file("."))
-  .aggregate(utilBase, primitivesJvm, primitivesJs, okClient, okClientIo)
+  .aggregate(utilBase, primitivesJvm, primitivesJs, okClient, okClientIo, config)
   .settings(
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))),
     publish / skip := true,
