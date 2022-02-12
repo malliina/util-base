@@ -4,15 +4,15 @@ import cats.effect.IO
 import cats.effect.kernel.{Temporal, Resource}
 import cats.effect.std.Dispatcher
 import com.malliina.http.FullUrl
-import com.malliina.http.io.SocketEvent.*
+import com.malliina.http.io.SocketEvent._
 import com.malliina.http.io.WebSocketIO.log
 import com.malliina.util.AppLogger
 import com.malliina.values.Username
 import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
-import io.circe.*
+import io.circe._
 import io.circe.syntax.EncoderOps
-import okhttp3.*
+import okhttp3._
 import okio.ByteString
 import org.slf4j.LoggerFactory
 

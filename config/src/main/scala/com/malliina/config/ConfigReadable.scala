@@ -5,17 +5,20 @@ import com.malliina.values.{ErrorMessage, Readable}
 import com.typesafe.config.Config
 
 import java.nio.file.{InvalidPathException, Path, Paths}
+import scala.util.control.NonFatal
 
-trait ConfigReadable[T]:
+trait ConfigReadable[T] {
   def read(key: String, c: Config): Either[ErrorMessage, T]
-  def flatMap[U](f: T => ConfigReadable[U]): ConfigReadable[U] =
+  def flatMap[U](f: T => ConfigReadable[U]): ConfigReadable[U] = {
     val parent = this
     (key: String, c: Config) => parent.read(key, c).flatMap(t => f(t).read(key, c))
+  }
   def emap[U](f: T => Either[ErrorMessage, U]): ConfigReadable[U] = (key: String, c: Config) =>
     read(key, c).flatMap(f)
   def map[U](f: T => U): ConfigReadable[U] = emap(t => Right(f(t)))
+}
 
-object ConfigReadable:
+object ConfigReadable {
   implicit val string: ConfigReadable[String] =
     recovered((key: String, c: Config) => Right(c.getString(key)))
   implicit val url: ConfigReadable[FullUrl] =
@@ -24,7 +27,9 @@ object ConfigReadable:
     recovered((key: String, c: Config) => Right(c.getInt(key)))
   implicit val path: ConfigReadable[Path] = ConfigReadable.string.emap { s =>
     try Right(Paths.get(s))
-    catch case ipe: InvalidPathException => Left(ErrorMessage(s"Invalid path: '$s'."))
+    catch {
+      case ipe: InvalidPathException => Left(ErrorMessage(s"Invalid path: '$s'."))
+    }
   }
   implicit val bool: ConfigReadable[Boolean] =
     recovered((key: String, c: Config) => Right(c.getBoolean(key)))
@@ -34,7 +39,11 @@ object ConfigReadable:
   private def recovered[T](unsafe: ConfigReadable[T]): ConfigReadable[T] =
     (key: String, c: Config) =>
       try unsafe.read(key, c)
-      catch case e => Left(ErrorMessage(Option(e.getMessage).getOrElse(s"Failed to read '$key'.")))
+      catch {
+        case NonFatal(e) =>
+          Left(ErrorMessage(Option(e.getMessage).getOrElse(s"Failed to read '$key'.")))
+      }
 
   implicit def readable[T](implicit r: Readable[T]): ConfigReadable[T] =
     string.emap(s => r.read(s))
+}
