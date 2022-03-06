@@ -10,7 +10,7 @@ import okhttp3._
 import java.io.IOException
 
 object HttpClientIO {
-  val resource = Resource.make(IO(HttpClientIO()))(c => IO(c.close()))
+  val resource: Resource[IO, HttpClientIO] = Resource.make(IO(HttpClientIO()))(c => IO(c.close()))
 
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
 

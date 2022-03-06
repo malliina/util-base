@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 trait WebSocketOps {
-//  def open(): IO[Unit]
   def send[T: Encoder](message: T): IO[Boolean] = sendMessage(message.asJson.noSpaces)
   def sendMessage(s: String): IO[Boolean]
 }
@@ -95,10 +94,9 @@ class WebSocketIO(
       send(Open(webSocket, response))
     }
   }
-  val request = requestFor(url, headers).build()
-  val connectOnce = IO(client.newWebSocket(request, listener))
-
-  private val connectSocket: IO[WebSocket] = connectOnce.flatMap { socket =>
+  val request: Request = requestFor(url, headers).build()
+  val connectOnce: IO[WebSocket] = IO(client.newWebSocket(request, listener))
+  val connectSocket: IO[WebSocket] = connectOnce.flatMap { socket =>
     IO(active.set(Option(socket))).map(_ => socket)
   }
   private val backoff =
@@ -126,8 +124,6 @@ class WebSocketIO(
         ok => Stream.emit(ok)
       )
   }
-
-//  def open = events.compile.toList
 
   def sendMessage(message: String): IO[Boolean] = IO(active.get().exists(_.send(message)))
 

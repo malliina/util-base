@@ -21,6 +21,10 @@ A Scala Futures-enabled HTTP client. Wraps okhttp.
 
 An HTTP client built on https://typelevel.org/cats-effect/. Wraps okhttp.
 
+## config
+
+Wrapper for Typesafe config.
+
 # Releasing
 
     sbt release

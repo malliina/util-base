@@ -17,7 +17,9 @@ inThisBuild(
 val circeModules = Seq("circe-generic", "circe-parser")
 
 val moduleSettings = Seq(
-  libraryDependencies ++= circeModules.map(m => "io.circe" %% m % "0.14.1") ++ Seq(
+  libraryDependencies ++= Seq("circe-generic", "circe-parser").map(m =>
+    "io.circe" %% m % "0.14.1"
+  ) ++ Seq(
     munit
   )
 )
@@ -72,7 +74,7 @@ val config = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.1")
+    libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.2")
   )
 
 val utilBaseRoot = project
