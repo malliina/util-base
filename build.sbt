@@ -17,11 +17,8 @@ inThisBuild(
 val circeModules = Seq("circe-generic", "circe-parser")
 
 val moduleSettings = Seq(
-  libraryDependencies ++= Seq("circe-generic", "circe-parser").map(m =>
-    "io.circe" %% m % "0.14.1"
-  ) ++ Seq(
-    munit
-  )
+  libraryDependencies ++= Seq("circe-generic", "circe-parser")
+    .map(m => "io.circe" %% m % "0.14.2") ++ Seq(munit)
 )
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
@@ -37,9 +34,6 @@ val utilBase = project
   .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      "com.neovisionaries" % "nv-websocket-client" % "2.14"
-    ),
     releaseProcess := tagReleaseProcess.value
   )
 
@@ -49,7 +43,7 @@ val okClient = project
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.9.3",
+      "com.squareup.okhttp3" % "okhttp" % "4.10.0",
       munit
     ),
     releaseProcess := tagReleaseProcess.value
@@ -62,9 +56,9 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.10") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.2.3",
-        munit
+      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.11") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.2.8",
+        "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
     releaseProcess := tagReleaseProcess.value
   )

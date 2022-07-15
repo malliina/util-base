@@ -12,55 +12,44 @@ import okhttp3.WebSocket.Factory
 import okio.ByteString
 import fs2.concurrent.Topic
 import fs2.Stream
-import cats.effect.unsafe.implicits.global
-
+import cats.effect.SyncIO
 import concurrent.duration.DurationInt
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-class HttpClientIOTests extends FunSuite {
+class HttpClientIOTests extends munit.CatsEffectSuite {
   val Authorization = "Authorization"
-  private implicit val timer: Temporal[IO] = Temporal[IO]
+  val httpFixture: SyncIO[FunFixture[HttpClientIO]] = ResourceFixture(HttpClientIO.resource)
 
-  test("can make io request".ignore) {
-    val client = HttpClientIO()
-    try {
-      val res = client.get(FullUrl("http", "www.google.com", "")).unsafeRunSync()
-      assert(res.isSuccess)
-    } finally client.close()
+  httpFixture.test("can make io request".ignore) { client =>
+    val res = client.get(FullUrl("http", "www.google.com", ""))
+    res.map { r => assert(r.isSuccess) }
   }
 
-  test("websocket".ignore) {
-    val client = HttpClientIO()
+  httpFixture.test("websocket".ignore) { client =>
     WebSocketIO(
-      FullUrl.wss("logs.malliina.com", "/ws/sources"),
+      //FullUrl.wss("logs.malliina.com", "/ws/sources"),
+      FullUrl.ws("localhost:9000", "/ws/sources"),
       Map(Authorization -> authorizationValue(Username("test"), "test123")),
       client.client
     ).use { socket =>
-        val events: IO[Vector[SocketEvent]] = socket.events.take(5).compile.toVector
-        events.unsafeRunAndForget()
-        IO.sleep(3.seconds) >>
-          socket.close >>
-          IO.sleep(8.seconds) >>
-          socket.close >>
-          IO.sleep(8.seconds) >>
-          socket.close >>
-          IO(client.close())
-      }
-      .unsafeRunSync()
+      val events: IO[Vector[SocketEvent]] =
+        socket.events.take(20).evalTap(e => IO(println(e))).compile.toVector
+      events
+    }
   }
 
   test("interruption".ignore) {
     val start = System.currentTimeMillis()
     val tick =
       Stream(0L) ++ Stream.awakeEvery[IO](1.seconds).map(d => System.currentTimeMillis() - start)
-    val interrupter = Stream.sleep(5.seconds).map(_ => true)
+    val interrupter = Stream.sleep[IO](5.seconds).map(_ => true)
     val stream = tick.interruptWhen(interrupter).repeat.take(10)
     val outcome = stream.compile.toVector.unsafeRunSync()
     println(outcome)
   }
 
-  def authorizationValue(username: Username, password: String) =
+  def authorizationValue(username: Username, password: String): String =
     "Basic " + Base64.getEncoder.encodeToString(
       s"$username:$password".getBytes(StandardCharsets.UTF_8)
     )

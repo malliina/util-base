@@ -95,7 +95,8 @@ class WebSocketIO(
     }
   }
   val request: Request = requestFor(url, headers).build()
-  val connectOnce: IO[WebSocket] = IO(client.newWebSocket(request, listener))
+  val connectOnce: IO[WebSocket] =
+    IO(log.info(s"Connecting to '$url'...")) >> IO(client.newWebSocket(request, listener))
   val connectSocket: IO[WebSocket] = connectOnce.flatMap { socket =>
     IO(active.set(Option(socket))).map(_ => socket)
   }
