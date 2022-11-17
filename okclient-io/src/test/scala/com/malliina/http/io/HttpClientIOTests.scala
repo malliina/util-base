@@ -2,7 +2,7 @@ package com.malliina.http.io
 
 import cats.effect.IO
 import cats.effect.kernel.{Ref, Temporal}
-import com.malliina.http.FullUrl
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.http.HttpClient.requestFor
 import com.malliina.http.io.SocketEvent.{BytesMessage, Open}
 import com.malliina.values.Username
@@ -13,13 +13,14 @@ import okio.ByteString
 import fs2.concurrent.Topic
 import fs2.Stream
 import cats.effect.SyncIO
+
 import concurrent.duration.DurationInt
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 class HttpClientIOTests extends munit.CatsEffectSuite {
   val Authorization = "Authorization"
-  val httpFixture: SyncIO[FunFixture[HttpClientIO]] = ResourceFixture(HttpClientIO.resource)
+  val httpFixture: SyncIO[FunFixture[HttpClientF2[IO]]] = ResourceFixture(HttpClientIO.resource[IO])
 
   httpFixture.test("can make io request".ignore) { client =>
     val res = client.get(FullUrl("http", "www.google.com", ""))
@@ -27,16 +28,18 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
   }
 
   httpFixture.test("websocket".ignore) { client =>
-    WebSocketIO(
-      //FullUrl.wss("logs.malliina.com", "/ws/sources"),
-      FullUrl.ws("localhost:9000", "/ws/sources"),
-      Map(Authorization -> authorizationValue(Username("test"), "test123")),
-      client.client
-    ).use { socket =>
-      val events: IO[Vector[SocketEvent]] =
-        socket.events.take(20).evalTap(e => IO(println(e))).compile.toVector
-      events
-    }
+    WebSocketF
+      .build[IO](
+        //FullUrl.wss("logs.malliina.com", "/ws/sources"),
+        FullUrl.ws("localhost:9000", "/ws/sources"),
+        Map(Authorization -> authorizationValue(Username("test"), "test123")),
+        client.client
+      )
+      .use { socket =>
+        val events: IO[Vector[SocketEvent]] =
+          socket.events.take(20).evalTap(e => IO(println(e))).compile.toVector
+        events
+      }
   }
 
   test("interruption".ignore) {

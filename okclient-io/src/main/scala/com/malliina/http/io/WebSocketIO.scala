@@ -1,63 +1,63 @@
 package com.malliina.http.io
 
-import cats.effect.IO
-import cats.effect.kernel.{Temporal, Resource}
+import cats.effect.{Async, IO, Sync, Concurrent}
+import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
-import com.malliina.http.FullUrl
+import cats.syntax.all._
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.http.io.SocketEvent._
-import com.malliina.http.io.WebSocketIO.log
+import com.malliina.http.io.WebSocketF.log
 import com.malliina.util.AppLogger
-import com.malliina.values.Username
 import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
 import io.circe._
 import io.circe.syntax.EncoderOps
 import okhttp3._
 import okio.ByteString
-import org.slf4j.LoggerFactory
 
-import java.io.Closeable
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-trait WebSocketOps {
-  def send[T: Encoder](message: T): IO[Boolean] = sendMessage(message.asJson.noSpaces)
-  def sendMessage(s: String): IO[Boolean]
+trait WebSocketOps[F[_]] {
+  def send[T: Encoder](message: T): F[Boolean] = sendMessage(message.asJson.noSpaces)
+  def sendMessage(s: String): F[Boolean]
 }
 
-object WebSocketIO {
+object WebSocketF {
   private val log = AppLogger(getClass)
 
-  def apply(url: FullUrl, headers: Map[String, String], client: OkHttpClient)(
-    implicit t: Temporal[IO]
-  ): Resource[IO, WebSocketIO] =
+  def build[F[_]: Async](
+    url: FullUrl,
+    headers: Map[String, String],
+    client: OkHttpClient
+  ): Resource[F, WebSocketF[F]] =
     for {
-      topic <- Resource.eval(Topic[IO, SocketEvent])
-      interrupter <- Resource.eval(SignallingRef[IO, Boolean](false))
-      d <- Dispatcher[IO]
-      socket <- Resource.make(IO(new WebSocketIO(url, headers, client, topic, interrupter, d)))(s =>
-        s.close
-      )
+      topic <- Resource.eval(Topic[F, SocketEvent])
+      interrupter <- Resource.eval(SignallingRef[F, Boolean](false))
+      d <- Dispatcher[F]
+      socket <- Resource.make(
+        Sync[F].delay(new WebSocketF(url, headers, client, topic, interrupter, d))
+      )(s => s.close)
     } yield socket
 }
 
-class WebSocketIO(
+class WebSocketF[F[_]: Async](
   val url: FullUrl,
   headers: Map[String, String],
   client: OkHttpClient,
-  topic: Topic[IO, SocketEvent],
-  interrupter: SignallingRef[IO, Boolean],
-  d: Dispatcher[IO]
-)(implicit t: Temporal[IO])
-  extends WebSocketOps {
+  topic: Topic[F, SocketEvent],
+  interrupter: SignallingRef[F, Boolean],
+  d: Dispatcher[F]
+) extends WebSocketOps[F] {
   private val backoffTime: FiniteDuration = 10.seconds
-  private val active = new AtomicReference[Option[WebSocket]](None)
+  private val active: AtomicReference[Option[WebSocket]] =
+    new AtomicReference[Option[WebSocket]](None)
 
-  val allEvents: Stream[IO, SocketEvent] = topic.subscribe(10)
-  val messages: Stream[IO, String] = allEvents.collect {
+  val allEvents: Stream[F, SocketEvent] = topic.subscribe(10)
+  val messages: Stream[F, String] = allEvents.collect {
     case TextMessage(_, message) => message
   }
-  val jsonMessages: Stream[IO, Json] = messages.flatMap { message =>
+  val jsonMessages: Stream[F, Json] = messages.flatMap { message =>
     parser
       .parse(message)
       .fold(
@@ -95,29 +95,29 @@ class WebSocketIO(
     }
   }
   val request: Request = requestFor(url, headers).build()
-  val connectOnce: IO[WebSocket] =
-    IO(log.info(s"Connecting to '$url'...")) >> IO(client.newWebSocket(request, listener))
-  val connectSocket: IO[WebSocket] = connectOnce.flatMap { socket =>
-    IO(active.set(Option(socket))).map(_ => socket)
+  val connectOnce: F[WebSocket] =
+    delay(log.info(s"Connecting to '$url'...")) >> delay(client.newWebSocket(request, listener))
+  val connectSocket: F[WebSocket] = connectOnce.flatMap { socket =>
+    delay(active.set(Option(socket))).map(_ => socket)
   }
   private val backoff =
-    Stream.eval(IO(log.info(s"Reconnecting to '$url' in $backoffTime..."))).flatMap { _ =>
+    Stream.eval(delay(log.info(s"Reconnecting to '$url' in $backoffTime..."))).flatMap { _ =>
       Stream.sleep(backoffTime).map(_ => Idle)
     }
   private val untilFailure = allEvents.takeWhile {
     case Failure(_, _, _) => false
     case _                => true
   }
-  val events: Stream[IO, SocketEvent] = Stream
+  val events: Stream[F, SocketEvent] = Stream
     .eval(connectSocket)
     .flatMap(_ => untilFailure ++ backoff)
     .handleErrorWith(t =>
-      Stream.eval(IO(log.warn(s"Connection to '$url' failed exceptionally.", t))) >> backoff
+      Stream.eval(delay(log.warn(s"Connection to '$url' failed exceptionally.", t))) >> backoff
     )
     .repeat
     .interruptWhen(interrupter)
 
-  def messagesAs[T: Decoder]: Stream[IO, T] = jsonMessages.flatMap { json =>
+  def messagesAs[T: Decoder]: Stream[F, T] = jsonMessages.flatMap { json =>
     json
       .as[T]
       .fold(
@@ -126,15 +126,15 @@ class WebSocketIO(
       )
   }
 
-  def sendMessage(message: String): IO[Boolean] = IO(active.get().exists(_.send(message)))
+  def sendMessage(message: String): F[Boolean] = delay(active.get().exists(_.send(message)))
 
-  def close: IO[Unit] =
-    IO(log.info(s"Closing socket to '$url'...")) >>
+  def close: F[Unit] =
+    delay(log.info(s"Closing socket to '$url'...")) >>
       interrupter.set(true) >>
-      IO(active.get().foreach(_.cancel()))
+      delay(active.get().foreach(_.cancel()))
 
   def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
-    headers.foldLeft(new Request.Builder().url(url.url)) {
-      case (r, (key, value)) => r.addHeader(key, value)
-    }
+    HttpClient.requestFor(url, headers)
+
+  private def delay[A](thunk: => A) = Sync[F].delay(thunk)
 }

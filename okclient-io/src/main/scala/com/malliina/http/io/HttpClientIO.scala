@@ -1,7 +1,8 @@
 package com.malliina.http.io
 
 import cats.MonadError
-import cats.effect.{Concurrent, IO}
+import cats.effect.implicits.monadCancelOps_
+import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{FullUrl, HttpClient, OkClient, OkHttpBackend, OkHttpResponse}
@@ -10,15 +11,16 @@ import okhttp3._
 import java.io.IOException
 
 object HttpClientIO {
-  val resource: Resource[IO, HttpClientIO] = Resource.make(IO(HttpClientIO()))(c => IO(c.close()))
+  def resource[F[_]: Async]: Resource[F, HttpClientF2[F]] =
+    Resource.make(Async[F].delay(new HttpClientF2()))(c => Async[F].delay(c.close()))
 
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
 
   implicit class CallOps(val call: Call) extends AnyVal {
-    def io: IO[Response] = run(call)
+    def io[F[_]: Async]: F[Response] = run(call)
   }
 
-  def run(call: Call): IO[Response] = IO.async_ { cb =>
+  def run[F[_]: Async](call: Call): F[Response] = Async[F].async_ { cb =>
     call.enqueue(new Callback {
       override def onResponse(call: Call, response: Response): Unit = {
         cb(Right(response))
@@ -30,15 +32,19 @@ object HttpClientIO {
   }
 }
 
-class HttpClientIO(val client: OkHttpClient) extends HttpClientF[IO] with OkHttpBackend {
-  override def streamed[T](request: Request)(consume: Response => IO[T]): IO[T] =
-    raw(request).bracket(consume)(r => IO(r.close()))
-  override def raw(request: Request): IO[Response] =
+class HttpClientIO(client: OkHttpClient) extends HttpClientF2[IO](client)
+
+class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient)
+  extends HttpClientF[F]
+  with OkHttpBackend {
+  override def streamed[T](request: Request)(consume: Response => F[T]): F[T] =
+    raw(request).bracket(consume)(r => Sync[F].delay(r.close()))
+  override def raw(request: Request): F[Response] =
     client.newCall(request).io
   def socket(
     url: FullUrl,
     headers: Map[String, String]
-  ): Resource[IO, WebSocketIO] = WebSocketIO(url, headers, client)
+  ): Resource[F, WebSocketF[F]] = WebSocketF.build(url, headers, client)
 }
 
 abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {
