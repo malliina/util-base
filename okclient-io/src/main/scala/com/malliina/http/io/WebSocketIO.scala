@@ -1,18 +1,18 @@
 package com.malliina.http.io
 
-import cats.effect.{Async, IO, Sync, Concurrent}
-import cats.effect.kernel.Resource
+import cats.effect.{Async, Concurrent, IO, Sync}
+import cats.effect.kernel.{Resource, Temporal}
 import cats.effect.std.Dispatcher
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.malliina.http.{FullUrl, HttpClient}
-import com.malliina.http.io.SocketEvent._
+import com.malliina.http.io.SocketEvent.*
 import com.malliina.http.io.WebSocketF.log
 import com.malliina.util.AppLogger
-import fs2.Stream
+import fs2.{RaiseThrowable, Stream}
 import fs2.concurrent.{SignallingRef, Topic}
-import io.circe._
+import io.circe.*
 import io.circe.syntax.EncoderOps
-import okhttp3._
+import okhttp3.*
 import okio.ByteString
 
 import java.util.concurrent.atomic.AtomicReference
@@ -104,11 +104,38 @@ class WebSocketF[F[_]: Async](
     Stream.eval(delay(log.info(s"Reconnecting to '$url' in $backoffTime..."))).flatMap { _ =>
       Stream.sleep(backoffTime).map(_ => Idle)
     }
-  private val untilFailure = allEvents.takeWhile {
+  private val untilFailure: Stream[F, SocketEvent] = allEvents.takeWhile {
     case Failure(_, _, _) => false
     case _                => true
   }
-  val events: Stream[F, SocketEvent] = Stream
+  private val eventsOrFailure: Stream[F, SocketEvent] = allEvents.flatMap {
+    case f @ Failure(_, t, _) =>
+      val logging = delay {
+        t.map { ex => log.warn(s"Connection to '$url' failed exceptionally.", ex) }.getOrElse {
+          log.warn("Connection to '$url' failed.")
+        }
+      }
+      Stream.eval(logging) >> Stream.raiseError(f.exception)
+    case f @ Closed(_, code, reason) =>
+      Stream.eval(delay(log.warn(s"Socket to '$url' closed with code $code reason '$reason'."))) >>
+        Stream.raiseError(f.exception)
+    case other =>
+      Stream.emit(other)
+  }
+  val connections: Stream[F, List[SocketEvent]] = Stream.retry(
+    Stream
+      .eval(connectSocket)
+      .flatMap(_ => eventsOrFailure)
+      .compile
+      .toList,
+    backoffTime,
+    delay => delay * 2,
+    maxAttempts = 100000
+  )
+  val events: Stream[F, SocketEvent] = connections
+    .flatMap(xs => Stream.emits(xs))
+    .interruptWhen(interrupter)
+  val eventsConstantBackoff: Stream[F, SocketEvent] = Stream
     .eval(connectSocket)
     .flatMap(_ => untilFailure ++ backoff)
     .handleErrorWith(t =>
