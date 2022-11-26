@@ -30,14 +30,15 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
   httpFixture.test("websocket".ignore) { client =>
     WebSocketF
       .build[IO](
-        //FullUrl.wss("logs.malliina.com", "/ws/sources"),
-        FullUrl.ws("localhost:9000", "/ws/sources"),
-        Map(Authorization -> authorizationValue(Username("test"), "test123")),
-        client.client
+        FullUrl.wss("logs.malliina.com", "/ws/sources"),
+//        FullUrl.ws("localhost:9000", "/ws/sources"),
+        Map(Authorization -> authorizationValue(Username("test"), "test1234")),
+        client.client,
+        2.seconds
       )
       .use { socket =>
         val events: IO[Vector[SocketEvent]] =
-          socket.events.take(20).evalTap(e => IO(println(e))).compile.toVector
+          socket.events.take(3).evalTap(e => IO(println(e))).compile.toVector
         events
       }
   }

@@ -29,14 +29,15 @@ object WebSocketF {
   def build[F[_]: Async](
     url: FullUrl,
     headers: Map[String, String],
-    client: OkHttpClient
+    client: OkHttpClient,
+    backoffTime: FiniteDuration = 10.seconds
   ): Resource[F, WebSocketF[F]] =
     for {
       topic <- Resource.eval(Topic[F, SocketEvent])
       interrupter <- Resource.eval(SignallingRef[F, Boolean](false))
       d <- Dispatcher[F]
       socket <- Resource.make(
-        Sync[F].delay(new WebSocketF(url, headers, client, topic, interrupter, d))
+        Sync[F].delay(new WebSocketF(url, headers, backoffTime, client, topic, interrupter, d))
       )(s => s.close)
     } yield socket
 }
@@ -44,12 +45,12 @@ object WebSocketF {
 class WebSocketF[F[_]: Async](
   val url: FullUrl,
   headers: Map[String, String],
+  backoffTime: FiniteDuration,
   client: OkHttpClient,
   topic: Topic[F, SocketEvent],
   interrupter: SignallingRef[F, Boolean],
   d: Dispatcher[F]
 ) extends WebSocketOps[F] {
-  private val backoffTime: FiniteDuration = 10.seconds
   private val active: AtomicReference[Option[WebSocket]] =
     new AtomicReference[Option[WebSocket]](None)
 
@@ -66,32 +67,32 @@ class WebSocketF[F[_]: Async](
       )
   }
 
-  private def send(e: SocketEvent): Unit = d.unsafeRunAndForget(topic.publish1(e))
+  private def publish(e: SocketEvent): Unit = d.unsafeRunAndForget(topic.publish1(e))
 
   private val listener: WebSocketListener = new WebSocketListener {
     override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closed  socket to '$url'.")
-      send(Closed(webSocket, code, reason))
+      publish(Closed(webSocket, code, reason))
     }
     override def onClosing(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closing socket to '$url'.")
-      send(Closing(webSocket, code, reason))
+      publish(Closing(webSocket, code, reason))
     }
     override def onFailure(webSocket: WebSocket, t: Throwable, response: Response): Unit = {
       log.warn(s"Socket to '$url' failed.", t)
-      send(Failure(webSocket, Option(t), Option(response)))
+      publish(Failure(webSocket, Option(t), Option(response)))
     }
     override def onMessage(webSocket: WebSocket, text: String): Unit = {
       log.debug(s"Received text '$text'.")
-      send(TextMessage(webSocket, text))
+      publish(TextMessage(webSocket, text))
     }
     override def onMessage(webSocket: WebSocket, bytes: ByteString): Unit = {
       log.debug(s"Received bytes $bytes")
-      send(BytesMessage(webSocket, bytes))
+      publish(BytesMessage(webSocket, bytes))
     }
     override def onOpen(webSocket: WebSocket, response: Response): Unit = {
       log.info(s"Opened socket to '$url'.")
-      send(Open(webSocket, response))
+      publish(Open(webSocket, response))
     }
   }
   val request: Request = requestFor(url, headers).build()
@@ -112,7 +113,7 @@ class WebSocketF[F[_]: Async](
     case f @ Failure(_, t, _) =>
       val logging = delay {
         t.map { ex => log.warn(s"Connection to '$url' failed exceptionally.", ex) }.getOrElse {
-          log.warn("Connection to '$url' failed.")
+          log.warn(s"Connection to '$url' failed.")
         }
       }
       Stream.eval(logging) >> Stream.raiseError(f.exception)
@@ -122,19 +123,32 @@ class WebSocketF[F[_]: Async](
     case other =>
       Stream.emit(other)
   }
-  val connections: Stream[F, List[SocketEvent]] = Stream.retry(
-    Stream
-      .eval(connectSocket)
-      .flatMap(_ => eventsOrFailure)
-      .compile
-      .toList,
-    backoffTime,
-    delay => delay * 2,
-    maxAttempts = 100000
-  )
-  val events: Stream[F, SocketEvent] = connections
-    .flatMap(xs => Stream.emits(xs))
+
+  /**
+    * Connects to the source, retries on failures with exponential backoff, and returns any non-failure events.
+    *
+    * Run `close` to interrupt.
+    */
+  val events = Stream
+    .eval(Topic[F, SocketEvent])
+    .flatMap { receiver =>
+      val consume = Stream
+        .retry(
+          for {
+            socket <- connectSocket
+            _ <- eventsOrFailure.evalMap(ev => receiver.publish1(ev)).compile.drain
+          } yield socket,
+          backoffTime,
+          delay => delay * 2,
+          maxAttempts = 100000
+        )
+      receiver.subscribe(10).concurrently(consume)
+    }
     .interruptWhen(interrupter)
+
+  /**
+    * Use `events` instead.
+    */
   val eventsConstantBackoff: Stream[F, SocketEvent] = Stream
     .eval(connectSocket)
     .flatMap(_ => untilFailure ++ backoff)
