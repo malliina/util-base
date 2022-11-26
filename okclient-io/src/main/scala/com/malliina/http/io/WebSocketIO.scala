@@ -1,18 +1,18 @@
 package com.malliina.http.io
 
-import cats.effect.{Async, Concurrent, IO, Sync}
-import cats.effect.kernel.{Resource, Temporal}
+import cats.effect.{Async, Sync}
+import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
-import cats.syntax.all.*
+import cats.syntax.all._
 import com.malliina.http.{FullUrl, HttpClient}
-import com.malliina.http.io.SocketEvent.*
+import com.malliina.http.io.SocketEvent._
 import com.malliina.http.io.WebSocketF.log
 import com.malliina.util.AppLogger
-import fs2.{RaiseThrowable, Stream}
+import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
-import io.circe.*
+import io.circe._
 import io.circe.syntax.EncoderOps
-import okhttp3.*
+import okhttp3._
 import okio.ByteString
 
 import java.util.concurrent.atomic.AtomicReference

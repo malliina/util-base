@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import java.io.{Closeable, IOException}
+import java.io.IOException
 import java.nio.file.Path
 import java.util
 import java.util.concurrent.Executors
