@@ -6,7 +6,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.1.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.8" :: "2.12.15" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.8" :: "2.12.17" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -14,11 +14,9 @@ inThisBuild(
   )
 )
 
-val circeModules = Seq("circe-generic", "circe-parser")
-
 val moduleSettings = Seq(
-  libraryDependencies ++= Seq("circe-generic", "circe-parser")
-    .map(m => "io.circe" %% m % "0.14.2") ++ Seq(munit)
+  libraryDependencies ++= Seq("generic", "parser")
+    .map(m => "io.circe" %% s"circe-$m" % "0.14.3") ++ Seq(munit)
 )
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
@@ -56,8 +54,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.2.11") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.2.8",
+      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.4.5") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.3.0",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
     releaseProcess := tagReleaseProcess.value
