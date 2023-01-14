@@ -6,7 +6,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.1.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.8" :: "2.12.17" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.10" :: "2.12.17" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -47,14 +47,12 @@ val okClient = project
     releaseProcess := tagReleaseProcess.value
   )
 
-val logbackModules = Seq("classic", "core")
-
 val okClientIo = Project("okclient-io", file("okclient-io"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      logbackModules.map(m => "ch.qos.logback" % s"logback-$m" % "1.4.5") ++ Seq(
+      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.4.5") ++ Seq(
         "co.fs2" %% "fs2-core" % "3.3.0",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
