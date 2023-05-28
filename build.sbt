@@ -5,7 +5,7 @@ val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
 inThisBuild(
   Seq(
     releaseCrossBuild := true,
-    scalaVersion := "3.1.1",
+    scalaVersion := "3.2.2",
     crossScalaVersions := scalaVersion.value :: "2.13.10" :: "2.12.17" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
