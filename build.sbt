@@ -16,7 +16,7 @@ inThisBuild(
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % "0.14.5") ++ Seq(munit)
+    .map(m => "io.circe" %% s"circe-$m" % "0.14.3") ++ Seq(munit)
 )
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
