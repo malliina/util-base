@@ -15,7 +15,7 @@ import io.circe.syntax.EncoderOps
 import okhttp3._
 import okio.ByteString
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Success
@@ -55,7 +55,7 @@ class WebSocketF[F[_]: Async](
 ) extends WebSocketOps[F] {
   private val active: AtomicReference[Option[WebSocket]] =
     new AtomicReference[Option[WebSocket]](None)
-
+  private val interrupted = new AtomicBoolean(false)
   val allEvents: Stream[F, SocketEvent] = topic.subscribe(10)
   val messages: Stream[F, String] = allEvents.collect { case TextMessage(_, message) =>
     message
@@ -70,13 +70,15 @@ class WebSocketF[F[_]: Async](
   }
 
   private def publish(e: SocketEvent): Unit = {
+    val writeLog: (String, Throwable) => Unit =
+      if (interrupted.get()) log.debug else log.warn
     implicit val parasitic: ExecutionContext = new ExecutionContext {
       def execute(runnable: Runnable): Unit = runnable.run()
-      def reportFailure(t: Throwable): Unit = log.warn(s"Failed to execute.", t)
+      def reportFailure(t: Throwable): Unit = writeLog(s"Failed to execute.", t)
     }
     d.unsafeToFuture(topic.publish1(e)).onComplete {
       case util.Failure(exception) =>
-        log.warn(s"Failed to publish message to '$url'.", exception)
+        writeLog(s"Failed to publish message to '$url'.", exception)
       case Success(value) =>
         value match {
           case Left(value)  => log.warn(s"Failed to publish message to '$url', topic closed.")
@@ -95,7 +97,8 @@ class WebSocketF[F[_]: Async](
       publish(Closing(webSocket, code, reason))
     }
     override def onFailure(webSocket: WebSocket, t: Throwable, response: Response): Unit = {
-      log.warn(s"Socket to '$url' failed.", t)
+      if (!interrupted.get())
+        log.warn(s"Socket to '$url' failed.", t)
       publish(Failure(webSocket, Option(t), Option(response)))
     }
     override def onMessage(webSocket: WebSocket, text: String): Unit = {
@@ -186,6 +189,7 @@ class WebSocketF[F[_]: Async](
 
   def close: F[Unit] =
     delay(log.info(s"Closing socket to '$url'...")) >>
+      delay(interrupted.set(true)) >>
       interrupter.set(true) >>
       delay(active.get().foreach(_.cancel()))
 
