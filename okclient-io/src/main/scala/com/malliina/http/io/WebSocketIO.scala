@@ -15,8 +15,10 @@ import io.circe.syntax.EncoderOps
 import okhttp3._
 import okio.ByteString
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.util.Success
 
 trait WebSocketOps[F[_]] {
   def send[T: Encoder](message: T): F[Boolean] = sendMessage(message.asJson.noSpaces)
@@ -35,7 +37,7 @@ object WebSocketF {
     for {
       topic <- Resource.eval(Topic[F, SocketEvent])
       interrupter <- Resource.eval(SignallingRef[F, Boolean](false))
-      d <- Dispatcher[F]
+      d <- Dispatcher.parallel[F]
       socket <- Resource.make(
         Sync[F].delay(new WebSocketF(url, headers, backoffTime, client, topic, interrupter, d))
       )(s => s.close)
@@ -53,10 +55,10 @@ class WebSocketF[F[_]: Async](
 ) extends WebSocketOps[F] {
   private val active: AtomicReference[Option[WebSocket]] =
     new AtomicReference[Option[WebSocket]](None)
-
+  private val interrupted = new AtomicBoolean(false)
   val allEvents: Stream[F, SocketEvent] = topic.subscribe(10)
-  val messages: Stream[F, String] = allEvents.collect {
-    case TextMessage(_, message) => message
+  val messages: Stream[F, String] = allEvents.collect { case TextMessage(_, message) =>
+    message
   }
   val jsonMessages: Stream[F, Json] = messages.flatMap { message =>
     parser
@@ -67,7 +69,23 @@ class WebSocketF[F[_]: Async](
       )
   }
 
-  private def publish(e: SocketEvent): Unit = d.unsafeRunAndForget(topic.publish1(e))
+  private def publish(e: SocketEvent): Unit = {
+    val writeLog: (String, Throwable) => Unit =
+      if (interrupted.get()) log.debug else log.warn
+    implicit val parasitic: ExecutionContext = new ExecutionContext {
+      def execute(runnable: Runnable): Unit = runnable.run()
+      def reportFailure(t: Throwable): Unit = writeLog(s"Failed to execute.", t)
+    }
+    d.unsafeToFuture(topic.publish1(e)).onComplete {
+      case util.Failure(exception) =>
+        writeLog(s"Failed to publish message to '$url'.", exception)
+      case Success(value) =>
+        value match {
+          case Left(value)  => log.warn(s"Failed to publish message to '$url', topic closed.")
+          case Right(value) => ()
+        }
+    }
+  }
 
   private val listener: WebSocketListener = new WebSocketListener {
     override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
@@ -79,7 +97,8 @@ class WebSocketF[F[_]: Async](
       publish(Closing(webSocket, code, reason))
     }
     override def onFailure(webSocket: WebSocket, t: Throwable, response: Response): Unit = {
-      log.warn(s"Socket to '$url' failed.", t)
+      if (!interrupted.get())
+        log.warn(s"Socket to '$url' failed.", t)
       publish(Failure(webSocket, Option(t), Option(response)))
     }
     override def onMessage(webSocket: WebSocket, text: String): Unit = {
@@ -124,8 +143,8 @@ class WebSocketF[F[_]: Async](
       Stream.emit(other)
   }
 
-  /**
-    * Connects to the source, retries on failures with exponential backoff, and returns any non-failure events.
+  /** Connects to the source, retries on failures with exponential backoff, and returns any
+    * non-failure events.
     *
     * Run `close` to interrupt.
     */
@@ -146,8 +165,7 @@ class WebSocketF[F[_]: Async](
     }
     .interruptWhen(interrupter)
 
-  /**
-    * Use `events` instead.
+  /** Use `events` instead.
     */
   val eventsConstantBackoff: Stream[F, SocketEvent] = Stream
     .eval(connectSocket)
@@ -171,6 +189,7 @@ class WebSocketF[F[_]: Async](
 
   def close: F[Unit] =
     delay(log.info(s"Closing socket to '$url'...")) >>
+      delay(interrupted.set(true)) >>
       interrupter.set(true) >>
       delay(active.get().foreach(_.cancel()))
 
