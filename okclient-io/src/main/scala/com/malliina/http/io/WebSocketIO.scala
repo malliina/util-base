@@ -16,7 +16,7 @@ import okhttp3._
 import okio.ByteString
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Success
 
@@ -76,7 +76,7 @@ class WebSocketF[F[_]: Async](
       def execute(runnable: Runnable): Unit = runnable.run()
       def reportFailure(t: Throwable): Unit = writeLog(s"Failed to execute.", t)
     }
-    d.unsafeToFuture(topic.publish1(e)).onComplete {
+    Future(d.unsafeToFuture(topic.publish1(e))).flatten.onComplete {
       case util.Failure(exception) =>
         writeLog(s"Failed to publish message to '$url'.", exception)
       case Success(value) =>
