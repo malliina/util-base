@@ -16,7 +16,9 @@ import okhttp3._
 import okio.ByteString
 
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.util.Success
 
 trait WebSocketOps[F[_]] {
   def send[T: Encoder](message: T): F[Boolean] = sendMessage(message.asJson.noSpaces)
@@ -35,7 +37,7 @@ object WebSocketF {
     for {
       topic <- Resource.eval(Topic[F, SocketEvent])
       interrupter <- Resource.eval(SignallingRef[F, Boolean](false))
-      d <- Dispatcher[F]
+      d <- Dispatcher.parallel[F]
       socket <- Resource.make(
         Sync[F].delay(new WebSocketF(url, headers, backoffTime, client, topic, interrupter, d))
       )(s => s.close)
@@ -55,8 +57,8 @@ class WebSocketF[F[_]: Async](
     new AtomicReference[Option[WebSocket]](None)
 
   val allEvents: Stream[F, SocketEvent] = topic.subscribe(10)
-  val messages: Stream[F, String] = allEvents.collect {
-    case TextMessage(_, message) => message
+  val messages: Stream[F, String] = allEvents.collect { case TextMessage(_, message) =>
+    message
   }
   val jsonMessages: Stream[F, Json] = messages.flatMap { message =>
     parser
@@ -67,7 +69,21 @@ class WebSocketF[F[_]: Async](
       )
   }
 
-  private def publish(e: SocketEvent): Unit = d.unsafeRunAndForget(topic.publish1(e))
+  private def publish(e: SocketEvent): Unit = {
+    implicit val parasitic: ExecutionContext = new ExecutionContext {
+      def execute(runnable: Runnable): Unit = runnable.run()
+      def reportFailure(t: Throwable): Unit = log.warn(s"Failed to execute.", t)
+    }
+    d.unsafeToFuture(topic.publish1(e)).onComplete {
+      case util.Failure(exception) =>
+        log.warn(s"Failed to publish message to '$url'.", exception)
+      case Success(value) =>
+        value match {
+          case Left(value)  => log.warn(s"Failed to publish message to '$url', topic closed.")
+          case Right(value) => ()
+        }
+    }
+  }
 
   private val listener: WebSocketListener = new WebSocketListener {
     override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
@@ -124,8 +140,8 @@ class WebSocketF[F[_]: Async](
       Stream.emit(other)
   }
 
-  /**
-    * Connects to the source, retries on failures with exponential backoff, and returns any non-failure events.
+  /** Connects to the source, retries on failures with exponential backoff, and returns any
+    * non-failure events.
     *
     * Run `close` to interrupt.
     */
@@ -146,8 +162,7 @@ class WebSocketF[F[_]: Async](
     }
     .interruptWhen(interrupter)
 
-  /**
-    * Use `events` instead.
+  /** Use `events` instead.
     */
   val eventsConstantBackoff: Stream[F, SocketEvent] = Stream
     .eval(connectSocket)
