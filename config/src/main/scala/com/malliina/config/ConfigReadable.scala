@@ -5,7 +5,6 @@ import com.malliina.values.{ErrorMessage, Readable}
 import com.typesafe.config.{Config, ConfigException}
 
 import java.nio.file.{InvalidPathException, Path, Paths}
-import scala.util.control.NonFatal
 
 sealed abstract class ConfigError(val message: ErrorMessage, inner: Option[Exception])
   extends Exception(message.message, inner.orNull) {
