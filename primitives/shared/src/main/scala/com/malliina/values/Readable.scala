@@ -1,5 +1,10 @@
 package com.malliina.values
 
+import com.malliina.http.FullUrl
+import com.malliina.measure.{DistanceM, SpeedM, Temperature}
+import com.malliina.storage.StorageSize
+
+import java.nio.file.{InvalidPathException, Path, Paths}
 import scala.util.Try
 
 trait Readable[R] {
@@ -12,17 +17,37 @@ trait Readable[R] {
 
 object Readable {
   implicit val string: Readable[String] = (s: String) => Right(s)
-  implicit val email: Readable[Email] = string.map(Email.apply)
-  implicit val long: Readable[Long] = string.emap { s =>
-    Try(s.toLong).fold(_ => Left(ErrorMessage(s"Invalid long: '$s'.")), l => Right(l))
-  }
+  implicit val int: Readable[Int] = fromTry("integer", s => Try(s.toInt))
+  implicit val long: Readable[Long] = fromTry("long", s => Try(s.toLong))
+  implicit val double: Readable[Double] = fromTry("double", s => Try(s.toDouble))
   implicit val userId: Readable[UserId] = long.emap(UserId.build)
-  implicit val int: Readable[Int] = string.emap { s =>
-    Try(s.toInt).fold(_ => Left(ErrorMessage(s"Invalid long: '$s'.")), l => Right(l))
+  implicit val email: Readable[Email] = validatedString(Email)
+  implicit val username: Readable[Username] = validatedString(Username)
+  implicit val password: Readable[Password] = validatedString(Password)
+  implicit val accessToken: Readable[AccessToken] = validatedString(AccessToken)
+  implicit val idToken: Readable[IdToken] = validatedString(IdToken)
+  implicit val refreshToken: Readable[RefreshToken] = validatedString(RefreshToken)
+  implicit val distance: Readable[DistanceM] = double.map(DistanceM.apply)
+  implicit val speed: Readable[SpeedM] = double.map(SpeedM.apply)
+  implicit val temperature: Readable[Temperature] = double.map(Temperature.apply)
+  implicit val storageSize: Readable[StorageSize] = long.map(StorageSize.apply)
+  implicit val path: Readable[Path] = string.emap { s =>
+    try Right(Paths.get(s))
+    catch {
+      case ipe: InvalidPathException => Left(ErrorMessage(s"Invalid path: '$s'."))
+    }
   }
   implicit val boolean: Readable[Boolean] = string.emap {
     case "true"  => Right(true)
     case "false" => Right(false)
     case other   => Left(ErrorMessage(s"Invalid boolean: '$other'."))
   }
+  implicit val url: Readable[FullUrl] = string.emap(FullUrl.build)
+
+  private def fromTry[T](label: String, t: String => Try[T]) =
+    string.emap(s => t(s).fold(_ => Left(ErrorMessage(s"Invalid $label: '$s'.")), v => Right(v)))
+  private def validatedString[S <: WrappedString, T <: StringCompanion[S]](t: T): Readable[S] =
+    string.emap(t.build)
+  private def validatedLong[S <: WrappedId, T <: IdCompanion[S]](t: T): Readable[S] =
+    long.emap(t.build)
 }

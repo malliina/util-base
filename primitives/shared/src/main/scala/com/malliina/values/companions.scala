@@ -1,7 +1,6 @@
 package com.malliina.values
 
-import io.circe._, io.circe.generic.auto._
-import scala.util.{Try, Failure, Success}
+import io.circe.{Codec, Decoder, Encoder}
 
 trait Identifier extends Any {
   def id: String
@@ -41,8 +40,6 @@ abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
 }
 
 abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
-  implicit val readable: Readable[T] = Readable.string.emap(s => build(s))
-
   override def write(t: T): String = t.value
 }
 
@@ -54,8 +51,8 @@ abstract class JsonCompanion[Raw, T](implicit d: Decoder[Raw], e: Encoder[Raw], 
     Right(apply(input))
 }
 
-abstract class ValidatingCompanion[Raw, T](
-  implicit d: Decoder[Raw],
+abstract class ValidatingCompanion[Raw, T](implicit
+  d: Decoder[Raw],
   e: Encoder[Raw],
   o: Ordering[Raw]
 ) {

@@ -2,8 +2,8 @@ package com.malliina.measure
 
 import io.circe._
 
-/**
-  * @param celsius degrees in Celsius scale
+/** @param celsius
+  *   degrees in Celsius scale
   */
 case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature] {
   override def compare(that: Temperature): Int = toCelsius compare that.toCelsius
@@ -17,8 +17,8 @@ case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature]
   def ==(other: Temperature) = toCelsius == other.toCelsius
   def !=(other: Temperature) = toCelsius != other.toCelsius
 
-  /**
-    * @return a string of format 'n units'
+  /** @return
+    *   a string of format 'n units'
     */
   def formatCelsius = s"$toCelsius C"
 

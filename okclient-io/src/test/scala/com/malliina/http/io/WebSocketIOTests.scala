@@ -11,12 +11,11 @@ import scala.concurrent.{Await, Promise}
 
 class WebSocketIOTests extends FunSuite {
   test("topic example") {
-    val list: Vector[String] = Topic[IO, String]
-      .flatMap { topic =>
-        val publisher = Stream.constant("1").covary[IO].through(topic.publish)
-        val subscriber = topic.subscribe(10).take(4)
-        subscriber.concurrently(publisher).compile.toVector
-      }
+    val list: Vector[String] = Topic[IO, String].flatMap { topic =>
+      val publisher = Stream.constant("1").covary[IO].through(topic.publish)
+      val subscriber = topic.subscribe(10).take(4)
+      subscriber.concurrently(publisher).compile.toVector
+    }
       .unsafeRunSync()
     assertEquals(list, Vector.fill(4)("1"))
   }

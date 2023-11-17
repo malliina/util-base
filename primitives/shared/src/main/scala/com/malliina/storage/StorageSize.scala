@@ -1,10 +1,8 @@
 package com.malliina.storage
 
-import io.circe._
+import io.circe.{Codec, Decoder, Encoder}
 
-class StorageSize(bytes: Long) {
-  private val k = 1024
-
+case class StorageSize(bytes: Long) extends AnyVal {
   def toBytes = bytes
   def toKilos = bytes / k
   def toKilosDouble = 1.0d * bytes / k
@@ -22,8 +20,8 @@ class StorageSize(bytes: Long) {
   def ==(other: StorageSize) = this.toBytes == other.toBytes
   def !=(other: StorageSize) = this.toBytes != other.toBytes
 
-  /**
-    * @return a string of format 'n units'
+  /** @return
+    *   a string of format 'n units'
     */
   override def toString: String =
     if (toTeras > 10) s"$toTeras terabytes"
@@ -34,7 +32,7 @@ class StorageSize(bytes: Long) {
 }
 
 object StorageSize {
-  val empty = new StorageSize(0)
+  val empty: StorageSize = StorageSize(0)
 
   implicit val json: Codec[StorageSize] = Codec.from(
     Decoder.decodeLong.map(_.bytes),

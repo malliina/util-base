@@ -1,11 +1,10 @@
 package com.malliina.measure
 
 import com.malliina.measure.DistanceM.k
-import io.circe._
+import io.circe.{Codec, Decoder, Encoder}
 
-/**
-  *
-  * @param meters meters
+/** @param meters
+  *   meters
   */
 case class DistanceM(meters: Double) extends AnyVal with Ordered[DistanceM] {
   override def compare(that: DistanceM): Int = toMillis compare that.toMillis
@@ -19,16 +18,16 @@ case class DistanceM(meters: Double) extends AnyVal with Ordered[DistanceM] {
   def ==(other: DistanceM) = this.toMeters == other.toMeters
   def !=(other: DistanceM) = this.toMeters != other.toMeters
 
-  /**
-    * @return a string of format 'n units'
+  /** @return
+    *   a string of format 'n units'
     */
   def short: String =
     if (toKilometers >= 10) s"$toKilometers km"
     else if (toMeters >= 10) s"$toMeters m"
     else s"$toMillis mm"
 
-  /**
-    * @return a string of format 'n units'
+  /** @return
+    *   a string of format 'n units'
     */
   override def toString = short
 }

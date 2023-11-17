@@ -6,12 +6,12 @@ import scala.util.{Failure, Success, Try}
 package object util {
 
   implicit class TryOps[T](orig: Try[T]) {
-    def recoverNonFatal[U >: T](fix: Throwable => U): Try[U] = orig.recover {
-      case NonFatal(t) => fix(t)
+    def recoverNonFatal[U >: T](fix: Throwable => U): Try[U] = orig.recover { case NonFatal(t) =>
+      fix(t)
     }
 
-    def recoverAll[U >: T](fix: Throwable => U): Try[U] = orig.recover {
-      case NonFatal(t) => fix(t)
+    def recoverAll[U >: T](fix: Throwable => U): Try[U] = orig.recover { case NonFatal(t) =>
+      fix(t)
     }
 
     def recoverWithAll[U >: T](fix: Throwable => Try[U]): Try[U] = orig.recoverWith {

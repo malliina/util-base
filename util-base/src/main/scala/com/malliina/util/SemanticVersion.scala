@@ -5,9 +5,9 @@ package com.malliina.util
 case class SemanticVersion(version: String) {
   val (major, minor, patchString) = version.split("", 3) match {
     case Array(ma, mi, pa) => (ma.toInt, mi.toInt, pa)
-    case Array(ma, mi) => (ma.toInt, mi.toInt, "0")
-    case Array(ma) => (ma.toInt, 0, "0")
-    case other => (0, 0, "0")
+    case Array(ma, mi)     => (ma.toInt, mi.toInt, "0")
+    case Array(ma)         => (ma.toInt, 0, "0")
+    case other             => (0, 0, "0")
   }
   val isPrerelease = patchString contains "-"
   val patch = patchInt(patchString)
@@ -18,7 +18,8 @@ case class SemanticVersion(version: String) {
     else p.substring(0, hyphenIndex).toInt
   }
 
-  def ==(other: SemanticVersion) = version == other.version //major == other.major && minor == other.minor && patchString == other.patchString
+  def ==(other: SemanticVersion) =
+    version == other.version // major == other.major && minor == other.minor && patchString == other.patchString
 
   def !=(other: SemanticVersion) = !(this == other)
 

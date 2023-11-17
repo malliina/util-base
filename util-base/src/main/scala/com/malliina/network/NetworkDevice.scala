@@ -14,17 +14,20 @@ trait NetworkDevice {
       if !address.isAnyLocalAddress && !address.isLinkLocalAddress && !address.isLoopbackAddress
     } yield address).toSeq
 
-  /** Given `sampleIP`, which is a numerical IP address, returns a list of
-    * addresses close to that IP. A subnet of 255.255.255.0 is assumed.
+  /** Given `sampleIP`, which is a numerical IP address, returns a list of addresses close to that
+    * IP. A subnet of 255.255.255.0 is assumed.
     *
     * The IPs are returned in increasing order.
     *
-    * Example: if `sampleIP` is 10.0.0.6 and `radius` is 2, this method returns
-    * the following IPs: 10.0.0.4, 10.0.0.5, 10.0.0.7, 10.0.0.8.
+    * Example: if `sampleIP` is 10.0.0.6 and `radius` is 2, this method returns the following IPs:
+    * 10.0.0.4, 10.0.0.5, 10.0.0.7, 10.0.0.8.
     *
-    * @param sampleIP a sample IP
-    * @param radius   the maximum distance from `sampleIP` of the returned addresses
-    * @return addresses in the same subnet as `sampleIP`, excluding `sampleIP`
+    * @param sampleIP
+    *   a sample IP
+    * @param radius
+    *   the maximum distance from `sampleIP` of the returned addresses
+    * @return
+    *   addresses in the same subnet as `sampleIP`, excluding `sampleIP`
     */
   def adjacentIPs(sampleIP: String, radius: Int = 10): List[String] = {
     val (nw, lastOctet) = ipSplit(sampleIP)
@@ -33,10 +36,10 @@ trait NetworkDevice {
     range.map(num => s"$nw.$num").toList
   }
 
-  /**
-    *
-    * @param ip a numerical IP address
-    * @return the network part of the IP and its last octet
+  /** @param ip
+    *   a numerical IP address
+    * @return
+    *   the network part of the IP and its last octet
     */
   def ipSplit(ip: String): (String, Int) = {
     val lastDotIndex = ip lastIndexOf '.'

@@ -3,8 +3,8 @@ package com.malliina
 package object measure {
   private val k = 1000L
 
-  /**
-    * @param amount integer amount of some distance unit
+  /** @param amount
+    *   integer amount of some distance unit
     */
   implicit final class DistanceIntM(val amount: Int) extends AnyVal with DistanceConversionsM {
     protected def asMeters(multiplier: Double): Double = multiplier * amount

@@ -3,8 +3,8 @@ package com.malliina.measure
 import com.malliina.measure.SpeedM.{knotInKmh, meterPerSecondInKmh}
 import io.circe._
 
-/**
-  * @param mps meters per second
+/** @param mps
+  *   meters per second
   */
 case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
   override def compare(that: SpeedM): Int = mps compare that.toMps
@@ -20,8 +20,8 @@ case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
 
   def formatMs = s"$toMps m/s"
 
-  /**
-    * @return a string of format 'n units'
+  /** @return
+    *   a string of format 'n units'
     */
   def formatKmh = s"$toKmh kmh"
   def formatKnots = s"$toKnots kn"

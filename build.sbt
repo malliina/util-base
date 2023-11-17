@@ -64,7 +64,7 @@ val config = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.3")
+    libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.3") ++ Seq(munit)
   )
 
 val utilBaseRoot = project

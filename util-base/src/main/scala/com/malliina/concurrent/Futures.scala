@@ -17,14 +17,17 @@ trait Futures {
       })
     })
 
-  /** Constructs a future that is completed according to `keepPromise`. This pattern
-    * can be used to convert callback-based APIs to Future-based ones. For example,
-    * parameter `keepPromise` can call some callback-based API, and the callback
-    * implementation can complete the supplied promise.
+  /** Constructs a future that is completed according to `keepPromise`. This pattern can be used to
+    * convert callback-based APIs to Future-based ones. For example, parameter `keepPromise` can
+    * call some callback-based API, and the callback implementation can complete the supplied
+    * promise.
     *
-    * @param keepPromise code that completes the promise
-    * @tparam T type of value to complete promise with
-    * @return the future completion value
+    * @param keepPromise
+    *   code that completes the promise
+    * @tparam T
+    *   type of value to complete promise with
+    * @return
+    *   the future completion value
     */
   def promisedFuture[T](keepPromise: Promise[T] => Unit): Future[T] = {
     val p = Promise[T]()

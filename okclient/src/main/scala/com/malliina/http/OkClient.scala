@@ -54,9 +54,12 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
 
   /** Provides the response but closes the response body after `consume` completes.
     *
-    * @param request request
-    * @param consume code to consume the response
-    * @tparam T type of result
+    * @param request
+    *   request
+    * @param consume
+    *   code to consume the response
+    * @tparam T
+    *   type of result
     * @return
     */
   def streamed[T](request: Request)(consume: Response => Future[T]): Future[T] = {
@@ -67,11 +70,13 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
     }
   }
 
-  /** Remember to close the response body if calling this method. If you don't need to stream the response,
-    * call `execute` instead.
+  /** Remember to close the response body if calling this method. If you don't need to stream the
+    * response, call `execute` instead.
     *
-    * @param request request to execute
-    * @return the response
+    * @param request
+    *   request to execute
+    * @return
+    *   the response
     */
   def raw(request: Request): Future[Response] = {
     val (future, callback) = RawCallback.paired()

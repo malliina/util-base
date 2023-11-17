@@ -7,14 +7,15 @@ package object concurrent {
 
   implicit class FutureOps[T](fut: Future[T]) {
     def recoverAll[U >: T](fix: Throwable => U)(implicit ec: ExecutionContext): Future[U] =
-      fut.recover {
-        case NonFatal(t) => fix(t)
+      fut.recover { case NonFatal(t) =>
+        fix(t)
       }
 
-    def recoverWithAll[U >: T](fix: Throwable => Future[U])(
-        implicit ec: ExecutionContext): Future[U] =
-      fut.recoverWith {
-        case NonFatal(t) => fix(t)
+    def recoverWithAll[U >: T](
+      fix: Throwable => Future[U]
+    )(implicit ec: ExecutionContext): Future[U] =
+      fut.recoverWith { case NonFatal(t) =>
+        fix(t)
       }
 
     def orElse[U >: T](other: => Future[U])(implicit ec: ExecutionContext) =

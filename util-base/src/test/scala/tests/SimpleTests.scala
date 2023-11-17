@@ -39,8 +39,8 @@ class SimpleTests extends munit.FunSuite {
 
   test("Future exceptions") {
     val failingFuture = Future.successful(1).map(_ => throw new Exception)
-    val recovered = failingFuture.recover {
-      case _: Exception => 2
+    val recovered = failingFuture.recover { case _: Exception =>
+      2
     }
     val two = Await.result(recovered, 2.seconds)
     assert(two == 2)

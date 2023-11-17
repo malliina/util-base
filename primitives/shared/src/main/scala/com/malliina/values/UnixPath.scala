@@ -2,8 +2,8 @@ package com.malliina.values
 
 import java.nio.file.Path
 
-/**
-  * @param path a path - all separators must be slashes ('/') regardless of platform
+/** @param path
+  *   a path - all separators must be slashes ('/') regardless of platform
   */
 case class UnixPath(path: String) extends WrappedString {
   def value: String = path

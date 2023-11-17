@@ -24,8 +24,10 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
 
   /** URL encodes the values in `map`, and adds them to the query string.
     *
-    * @param map query string values
-    * @return a new URL with the query strings applied
+    * @param map
+    *   query string values
+    * @return
+    *   a new URL with the query strings applied
     */
   def query(map: Map[String, String]): FullUrl = {
     val encoded = map.mapValues(v => URLEncoder.encode(v, StandardCharsets.UTF_8.name()))

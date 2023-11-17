@@ -14,8 +14,8 @@ import java.io.Closeable
 
 object HttpClient {
   def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
-    headers.foldLeft(new Request.Builder().url(url.url)) {
-      case (r, (key, value)) => r.addHeader(key, value)
+    headers.foldLeft(new Request.Builder().url(url.url)) { case (r, (key, value)) =>
+      r.addHeader(key, value)
     }
 }
 
@@ -74,9 +74,8 @@ trait HttpClient[F[_]] extends Closeable {
     headers: Map[String, String] = Map.empty
   ): F[OkHttpResponse] = {
     val bodyBuilder = new FormBody.Builder(StandardCharsets.UTF_8)
-    form foreach {
-      case (k, v) =>
-        bodyBuilder.add(k, v)
+    form foreach { case (k, v) =>
+      bodyBuilder.add(k, v)
     }
     post(url, bodyBuilder.build(), headers)
   }
@@ -88,9 +87,8 @@ trait HttpClient[F[_]] extends Closeable {
     files: Seq[MultiPartFile] = Nil
   ): F[OkHttpResponse] = {
     val bodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM)
-    parts.foreach {
-      case (k, v) =>
-        bodyBuilder.addFormDataPart(k, v)
+    parts.foreach { case (k, v) =>
+      bodyBuilder.addFormDataPart(k, v)
     }
     files.foreach { filePart =>
       bodyBuilder.addFormDataPart(
@@ -113,10 +111,14 @@ trait HttpClient[F[_]] extends Closeable {
 
   /** Downloads `url` to `to`, returning the number of bytes written to `to`.
     *
-    * @param url     url to download
-    * @param to      destination, a file
-    * @param headers http headers
-    * @return bytes written
+    * @param url
+    *   url to download
+    * @param to
+    *   destination, a file
+    * @param headers
+    *   http headers
+    * @return
+    *   bytes written
     */
   def download(
     url: FullUrl,
@@ -143,10 +145,14 @@ trait HttpClient[F[_]] extends Closeable {
     *
     * The returned Future fails with a ResponseError if parsing fails.
     *
-    * @param response HTTP response
-    * @param url the request URL
-    * @tparam T type to parse
-    * @return a parsed response
+    * @param response
+    *   HTTP response
+    * @param url
+    *   the request URL
+    * @tparam T
+    *   type to parse
+    * @return
+    *   a parsed response
     */
   def parse[T: Decoder](response: OkHttpResponse, url: FullUrl): F[T] =
     if (response.isSuccess) {

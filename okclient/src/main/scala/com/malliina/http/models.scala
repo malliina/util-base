@@ -26,8 +26,8 @@ class OkHttpResponse(val inner: Response) extends HttpResponse {
 
 trait HttpResponse {
 
-  /**
-    * @return the body as a string
+  /** @return
+    *   the body as a string
     */
   def asString: String
   def headers: Map[String, Seq[String]]

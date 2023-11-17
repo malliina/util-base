@@ -6,8 +6,8 @@ import scala.concurrent.duration._
 import scala.language.reflectiveCalls
 
 object Utils {
-  val suppresser: PartialFunction[Throwable, Unit] = {
-    case _: Throwable => ()
+  val suppresser: PartialFunction[Throwable, Unit] = { case _: Throwable =>
+    ()
   }
 
   def runnable(f: => Any): Runnable = new Runnable {
@@ -27,7 +27,9 @@ object Utils {
 
   /** Attempts to compute `attempt`, suppressing the specified exception.
     *
-    * @return attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is thrown
+    * @return
+    *   attempt wrapped in an [[scala.Option]], or [[scala.None]] if an exception of type U is
+    *   thrown
     */
   def opt[T, U <: Throwable](attempt: => T)(implicit manifest: Manifest[U]): Option[T] =
     optionally(attempt).toOption

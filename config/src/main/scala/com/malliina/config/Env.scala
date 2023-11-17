@@ -1,5 +1,6 @@
 package com.malliina.config
 
+import cats.data.NonEmptyList
 import com.malliina.values.Readable
 
 object Env extends ValueReader(sys.env.get)
@@ -12,8 +13,8 @@ abstract class ValueReader(readString: String => Option[String]) {
     }
   def read[T](key: String)(implicit r: Readable[T]): Either[ConfigError, T] =
     readString(key)
-      .toRight(MissingValue(key))
+      .toRight(new MissingValue(NonEmptyList.of(key)))
       .flatMap { str =>
-        r.read(str).left.map(err => InvalidValue(key, err, None))
+        r.read(str).left.map(err => new InvalidValue(err, NonEmptyList.of(key), None))
       }
 }
