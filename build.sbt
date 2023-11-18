@@ -1,6 +1,9 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
+import scala.sys.process.Process
 
 val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
+
+val updateDocs = taskKey[Unit]("Updates README.md")
 
 inThisBuild(
   Seq(
@@ -67,6 +70,26 @@ val config = project
     libraryDependencies ++= Seq("com.typesafe" % "config" % "1.4.3") ++ Seq(munit)
   )
 
+val docs = project
+  .in(file("mdoc"))
+  .enablePlugins(MdocPlugin)
+  .settings(
+    publish / skip := true,
+    mdocVariables := Map("VERSION" -> version.value),
+    mdocOut := (ThisBuild / baseDirectory).value,
+    updateDocs := {
+      val log = streams.value.log
+      val outFile = mdocOut.value
+      IO.relativize((ThisBuild / baseDirectory).value, outFile)
+        .getOrElse(sys.error(s"Strange directory: $outFile"))
+      val addStatus = Process(s"git add $outFile").run(log).exitValue()
+      if (addStatus != 0) {
+        sys.error(s"Unexpected status code $addStatus for git commit.")
+      }
+    },
+    updateDocs := updateDocs.dependsOn(mdoc.toTask("")).value
+  )
+
 val utilBaseRoot = project
   .in(file("."))
   .aggregate(utilBase, primitivesJvm, primitivesJs, okClient, okClientIo, config)
@@ -77,7 +100,8 @@ val utilBaseRoot = project
     packagedArtifacts := Map.empty,
     publish := {},
     publishLocal := {},
-    releaseProcess := (okClient / tagReleaseProcess).value
+    releaseProcess := (okClient / tagReleaseProcess).value,
+    beforeCommitRelease := (docs / updateDocs).value
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
