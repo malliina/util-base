@@ -43,8 +43,12 @@ abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String,
   override def write(t: T): String = t.value
 }
 
-abstract class JsonCompanion[Raw, T](implicit d: Decoder[Raw], e: Encoder[Raw], o: Ordering[Raw])
-  extends ValidatingCompanion[Raw, T] {
+abstract class JsonCompanion[Raw, T](implicit
+  d: Decoder[Raw],
+  e: Encoder[Raw],
+  o: Ordering[Raw],
+  r: Readable[Raw]
+) extends ValidatingCompanion[Raw, T] {
   def apply(raw: Raw): T
 
   override def build(input: Raw): Either[ErrorMessage, T] =
@@ -54,13 +58,15 @@ abstract class JsonCompanion[Raw, T](implicit d: Decoder[Raw], e: Encoder[Raw], 
 abstract class ValidatingCompanion[Raw, T](implicit
   d: Decoder[Raw],
   e: Encoder[Raw],
-  o: Ordering[Raw]
+  o: Ordering[Raw],
+  r: Readable[Raw]
 ) {
   implicit val json: Codec[T] = Codec.from(
     d.emap(raw => build(raw).left.map(err => err.message)),
     e.contramap[T](write)
   )
   implicit val ordering: Ordering[T] = o.on(write)
+  implicit val readable: Readable[T] = r.emap(build)
 
   def build(input: Raw): Either[ErrorMessage, T]
   def write(t: T): Raw
@@ -76,8 +82,12 @@ abstract class StringEnumCompanion[T] extends EnumCompanion[String, T] {
     all.find(i => write(i).toLowerCase == input.toLowerCase).toRight(defaultError(input))
 }
 
-abstract class EnumCompanion[Raw, T](implicit f: Decoder[Raw], e: Encoder[Raw], o: Ordering[Raw])
-  extends ValidatingCompanion[Raw, T] {
+abstract class EnumCompanion[Raw, T](implicit
+  f: Decoder[Raw],
+  e: Encoder[Raw],
+  o: Ordering[Raw],
+  r: Readable[Raw]
+) extends ValidatingCompanion[Raw, T] {
 
   def all: Seq[T]
   def resolveName(item: T): Raw = write(item)

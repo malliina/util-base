@@ -19,13 +19,6 @@ object Readable {
   implicit val int: Readable[Int] = fromTry("integer", s => Try(s.toInt))
   implicit val long: Readable[Long] = fromTry("long", s => Try(s.toLong))
   implicit val double: Readable[Double] = fromTry("double", s => Try(s.toDouble))
-  implicit val userId: Readable[UserId] = long.emap(UserId.build)
-  implicit val email: Readable[Email] = validatedString(Email)
-  implicit val username: Readable[Username] = validatedString(Username)
-  implicit val password: Readable[Password] = validatedString(Password)
-  implicit val accessToken: Readable[AccessToken] = validatedString(AccessToken)
-  implicit val idToken: Readable[IdToken] = validatedString(IdToken)
-  implicit val refreshToken: Readable[RefreshToken] = validatedString(RefreshToken)
   implicit val distance: Readable[DistanceM] = double.map(DistanceM.apply)
   implicit val speed: Readable[SpeedM] = double.map(SpeedM.apply)
   implicit val temperature: Readable[Temperature] = double.map(Temperature.apply)
@@ -39,8 +32,4 @@ object Readable {
 
   private def fromTry[T](label: String, t: String => Try[T]) =
     string.emap(s => t(s).fold(_ => Left(ErrorMessage(s"Invalid $label: '$s'.")), v => Right(v)))
-  private def validatedString[S <: WrappedString, T <: StringCompanion[S]](t: T): Readable[S] =
-    string.emap(t.build)
-  private def validatedLong[S <: WrappedId, T <: IdCompanion[S]](t: T): Readable[S] =
-    long.emap(t.build)
 }
