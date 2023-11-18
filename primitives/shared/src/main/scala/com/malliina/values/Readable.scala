@@ -18,6 +18,7 @@ object Readable {
   implicit val string: Readable[String] = (s: String) => Right(s)
   implicit val int: Readable[Int] = fromTry("integer", s => Try(s.toInt))
   implicit val long: Readable[Long] = fromTry("long", s => Try(s.toLong))
+  implicit val float: Readable[Float] = fromTry("float", s => Try(s.toFloat))
   implicit val double: Readable[Double] = fromTry("double", s => Try(s.toDouble))
   implicit val distance: Readable[DistanceM] = double.map(DistanceM.apply)
   implicit val speed: Readable[SpeedM] = double.map(SpeedM.apply)
