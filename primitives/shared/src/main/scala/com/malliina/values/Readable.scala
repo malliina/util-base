@@ -4,7 +4,6 @@ import com.malliina.http.FullUrl
 import com.malliina.measure.{DistanceM, SpeedM, Temperature}
 import com.malliina.storage.StorageSize
 
-import java.nio.file.{InvalidPathException, Path, Paths}
 import scala.util.Try
 
 trait Readable[R] {
@@ -31,12 +30,6 @@ object Readable {
   implicit val speed: Readable[SpeedM] = double.map(SpeedM.apply)
   implicit val temperature: Readable[Temperature] = double.map(Temperature.apply)
   implicit val storageSize: Readable[StorageSize] = long.map(StorageSize.apply)
-  implicit val path: Readable[Path] = string.emap { s =>
-    try Right(Paths.get(s))
-    catch {
-      case ipe: InvalidPathException => Left(ErrorMessage(s"Invalid path: '$s'."))
-    }
-  }
   implicit val boolean: Readable[Boolean] = string.emap {
     case "true"  => Right(true)
     case "false" => Right(false)

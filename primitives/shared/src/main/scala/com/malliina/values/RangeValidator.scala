@@ -1,8 +1,5 @@
 package com.malliina.values
 
-import io.circe._
-import scala.util.{Success, Failure}
-
 trait RangeValidator[T, U] extends ValueValidator[T, U] {
   def empty = build(Default)
   lazy val MinValue = build(Min)

@@ -34,3 +34,9 @@ sealed abstract class TokenValue(token: String) extends WrappedString {
   override def value: String = token
   override def toString: String = token
 }
+
+case class ErrorMessage(message: String) extends WrappedString {
+  override def value = message
+}
+
+object ErrorMessage extends StringCompanion[ErrorMessage]

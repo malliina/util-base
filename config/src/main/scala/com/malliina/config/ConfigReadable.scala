@@ -5,6 +5,8 @@ import com.malliina.config.ConfigReadable.append
 import com.malliina.values.{ErrorMessage, Readable}
 import com.typesafe.config.{Config, ConfigException}
 
+import java.nio.file.{InvalidPathException, Path, Paths}
+
 sealed abstract class ConfigError(
   val message: ErrorMessage,
   val path: NonEmptyList[String],
@@ -81,7 +83,12 @@ object ConfigReadable {
     c.conf
       .config(key, c.position)
       .map(optConf => optConf.map(next => new ConfigNode(next, c.position ++ key.split('.'))))
-
+  implicit val path: ConfigReadable[Path] = ConfigReadable.string.emapParsed { s =>
+    try Right(Paths.get(s))
+    catch {
+      case ipe: InvalidPathException => Left(ErrorMessage(s"Invalid path: '$s'."))
+    }
+  }
   implicit def readable[T](implicit r: Readable[T]): ConfigReadable[T] =
     string.emapParsed(s => r.read(s))
 
