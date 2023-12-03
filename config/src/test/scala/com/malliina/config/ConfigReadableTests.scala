@@ -44,6 +44,11 @@ class ConfigReadableTests extends munit.FunSuite {
     }
     val res = root.parse[C]("a")
   }
+  test("ConfigNode.parseOrElse") {
+    val res = root.parseOrElse("non.existent", "fallback")
+    assert(res.isRight)
+    assertEquals(res.toOption.get, "fallback")
+  }
 
   def root = ConfigNode.root(testConf)
   def testConf = ConfigFactory.load("com/malliina/config/test.conf")

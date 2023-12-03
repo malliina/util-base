@@ -37,6 +37,10 @@ trait ConfigReadable[T] {
     parseOpt(key, c).flatMap { opt =>
       opt.toRight(new MissingValue(append(key, to = c.position)))
     }
+  def parseOrElse(key: String, c: ConfigNode, orElse: => T): Either[ConfigError, T] =
+    parseOpt(key, c).map { opt =>
+      opt.getOrElse(orElse)
+    }
   def flatMap[U](f: T => ConfigReadable[U]): ConfigReadable[U] = {
     val parent = this
     (key: String, c: ConfigNode) =>
