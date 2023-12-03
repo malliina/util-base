@@ -40,6 +40,12 @@ object SpeedM {
     Encoder.encodeDouble.contramap(_.toKmh)
   )
 
+  val mpsJson: Codec[SpeedM] = Codec.from(
+    Decoder.decodeDouble.map(mps => apply(mps)),
+    Encoder.encodeDouble.contramap(_.toMps)
+  )
+
+  // Not the best default codec, but stays like this for compatibility
   implicit val knotsJson: Codec[SpeedM] = Codec.from(
     Decoder.decodeDouble.map(kn => apply(kn * knotInKmh / meterPerSecondInKmh)),
     Encoder.encodeDouble.contramap(_.toKnots)
