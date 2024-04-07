@@ -9,7 +9,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.3.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.10" :: "2.12.18" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.13" :: "2.12.19" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -55,8 +55,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.4.11") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.7.0",
+      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.3") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.9.4",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
     releaseProcess := tagReleaseProcess.value

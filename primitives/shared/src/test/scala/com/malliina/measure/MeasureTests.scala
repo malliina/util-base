@@ -55,4 +55,10 @@ class MeasureTests extends munit.FunSuite {
     val s2 = SpeedM(2)
     assert(s1 > s2)
   }
+
+  test("sum distances with numeric") {
+    val ds = Seq(1.meters, 2.meters)
+    val distance: DistanceM = ds.sum
+    assert(distance == 3.meters)
+  }
 }

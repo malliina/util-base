@@ -40,4 +40,5 @@ object DistanceM {
     Decoder.decodeDouble.map(m => DistanceM(m)),
     Encoder.encodeDouble.contramap(_.toMeters)
   )
+  implicit val numeric: Numeric[DistanceM] = Numerical[Double, DistanceM](apply, _.meters)
 }
