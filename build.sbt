@@ -1,7 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 import scala.sys.process.Process
 
-val munit = "org.scalameta" %% "munit" % "0.7.29" % Test
+val munit = "org.scalameta" %% "munit" % "1.0.0" % Test
 
 val updateDocs = taskKey[Unit]("Updates README.md")
 
@@ -19,7 +19,7 @@ inThisBuild(
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % "0.14.6") ++ Seq(munit)
+    .map(m => "io.circe" %% s"circe-$m" % "0.14.9") ++ Seq(munit)
 )
 val primitives = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
@@ -55,8 +55,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.3") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.9.4",
+      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.6") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.10.2",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
     releaseProcess := tagReleaseProcess.value
