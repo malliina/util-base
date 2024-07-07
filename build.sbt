@@ -1,4 +1,4 @@
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import scala.sys.process.Process
 
 val munit = "org.scalameta" %% "munit" % "1.0.0" % Test
@@ -9,7 +9,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.3.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.13" :: "2.12.19" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.14" :: "2.12.19" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg",
@@ -21,8 +21,8 @@ val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
     .map(m => "io.circe" %% s"circe-$m" % "0.14.9") ++ Seq(munit)
 )
-val primitives = portableProject(JSPlatform, JVMPlatform)
-  .crossType(PortableType.Full)
+val primitives = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full)
   .in(file("primitives"))
   .enablePlugins(MavenCentralPlugin)
   .settings(moduleSettings)
