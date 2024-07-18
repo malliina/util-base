@@ -39,6 +39,13 @@ trait HttpClient[F[_]] extends Closeable {
   ): F[T] =
     postJson(url, json.asJson, headers).flatMap(r => parse[T](r, url))
 
+  def putAs[W: Encoder, T: Decoder](
+    url: FullUrl,
+    json: W,
+    headers: Map[String, String] = Map.empty
+  ): F[T] =
+    putJson(url, json.asJson, headers).flatMap(r => parse[T](r, url))
+
   def postJsonAs[T: Decoder](
     url: FullUrl,
     json: Json,
@@ -59,6 +66,13 @@ trait HttpClient[F[_]] extends Closeable {
     headers: Map[String, String] = Map.empty
   ): F[OkHttpResponse] =
     post(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
+
+  def putJson(
+    url: FullUrl,
+    json: Json,
+    headers: Map[String, String] = Map.empty
+  ): F[OkHttpResponse] =
+    put(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
 
   def postFile(
     url: FullUrl,
@@ -104,8 +118,22 @@ trait HttpClient[F[_]] extends Closeable {
     url: FullUrl,
     body: RequestBody,
     headers: Map[String, String]
+  ): F[OkHttpResponse] =
+    postPut(url, headers, _.post(body))
+
+  def put(
+    url: FullUrl,
+    body: RequestBody,
+    headers: Map[String, String]
+  ): F[OkHttpResponse] =
+    postPut(url, headers, _.put(body))
+
+  private def postPut(
+    url: FullUrl,
+    headers: Map[String, String],
+    installBody: Request.Builder => Request.Builder
   ): F[OkHttpResponse] = {
-    val builder = requestFor(url, headers).post(body)
+    val builder = installBody(requestFor(url, headers))
     execute(builder.build())
   }
 
