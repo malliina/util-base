@@ -11,10 +11,9 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
   val protoAndHost = s"$proto://$hostAndPort"
   val url = s"$protoAndHost$uri"
 
-  def /(more: String): FullUrl = {
+  def /(more: String): FullUrl =
     if (uri.endsWith("/")) append(more.dropWhile(_ == '/'))
     else append(if (more.startsWith("/")) more else s"/$more")
-  }
 
   def +(more: String) = append(more)
 

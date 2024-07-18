@@ -39,4 +39,8 @@ case class ErrorMessage(message: String) extends WrappedString {
   override def value = message
 }
 
-object ErrorMessage extends StringCompanion[ErrorMessage]
+object ErrorMessage extends StringCompanion[ErrorMessage] {
+  override def build(input: String): Either[ErrorMessage, ErrorMessage] =
+    if (input.nonEmpty) Right(ErrorMessage(input))
+    else Left(ErrorMessage("Must not be empty."))
+}
