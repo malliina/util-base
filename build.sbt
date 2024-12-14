@@ -1,7 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import scala.sys.process.Process
 
-val munit = "org.scalameta" %% "munit" % "1.0.0" % Test
+val munit = "org.scalameta" %% "munit" % "1.0.3" % Test
 
 val updateDocs = taskKey[Unit]("Updates README.md")
 
@@ -9,17 +9,16 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.3.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.14" :: "2.12.19" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.14" :: "2.12.20" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
-    developerName := "Michael Skogberg",
-    testFrameworks += new TestFramework("munit.Framework")
+    developerName := "Michael Skogberg"
   )
 )
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % "0.14.9") ++ Seq(munit)
+    .map(m => "io.circe" %% s"circe-$m" % "0.14.10") ++ Seq(munit)
 )
 val primitives = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
@@ -55,8 +54,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.6") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.10.2",
+      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.12") ++ Seq(
+        "co.fs2" %% "fs2-core" % "3.11.0",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
     releaseProcess := tagReleaseProcess.value
