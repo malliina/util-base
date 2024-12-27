@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import com.malliina.http.UrlSyntax.{https, wss}
+import com.malliina.http.UrlSyntax.{https, url, wss}
 
 class FullUrlTests extends munit.FunSuite {
   test("HTTPS literal") {
@@ -8,8 +8,13 @@ class FullUrlTests extends munit.FunSuite {
     assertEquals(url.url, "https://www.google.com")
   }
 
-  test("HTTPS literal") {
+  test("WSS literal") {
     val url = wss"www.google.com"
     assertEquals(url.url, "wss://www.google.com")
+  }
+
+  test("JDBC literal") {
+    val url = url"jdbc:mysql://localhost:3306/database"
+    assertEquals(url.url, "jdbc:mysql://localhost:3306/database")
   }
 }

@@ -9,19 +9,27 @@ object UrlSyntax extends UrlSyntax
 
 trait UrlSyntax:
   extension (inline ctx: StringContext)
+    inline def http(inline args: Any*): FullUrl =
+      ${ FullUrlLiterals.Http('ctx, 'args) }
     inline def https(inline args: Any*): FullUrl =
       ${ FullUrlLiterals.Https('ctx, 'args) }
     inline def wss(inline args: Any*): FullUrl =
       ${ FullUrlLiterals.Wss('ctx, 'args) }
+    inline def url(inline args: Any*): FullUrl =
+      ${ FullUrlLiterals.UrlContext('ctx, 'args) }
 
 private object FullUrlLiterals:
-  object Https extends UrlContext("https")
-  object Wss extends UrlContext("wss")
+  object Http extends ProtoContext("http")
+  object Https extends ProtoContext("https")
+  object Wss extends ProtoContext("wss")
 
-  class UrlContext(proto: String) extends LiteralStringContext[FullUrl]:
+  class ProtoContext(proto: String) extends LiteralStringContext[FullUrl]:
     override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[FullUrl]] =
-      val str = s"$proto://$in"
+      UrlContext.parse(s"$proto://$in")
+
+  object UrlContext extends LiteralStringContext[FullUrl]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[FullUrl]] =
       FullUrl
-        .build(str)
+        .build(in)
         .map: url =>
-          '{ FullUrl.build(${ Expr(str) }).getUnsafe }
+          '{ FullUrl.build(${ Expr(in) }).getUnsafe }
