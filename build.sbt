@@ -1,7 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import scala.sys.process.Process
 
-val munit = "org.scalameta" %% "munit" % "1.0.3" % Test
+val munit = "org.scalameta" %% "munit" % "1.0.4" % Test
 
 val updateDocs = taskKey[Unit]("Updates README.md")
 
@@ -54,7 +54,7 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++=
-      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.12") ++ Seq(
+      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.16") ++ Seq(
         "co.fs2" %% "fs2-core" % "3.11.0",
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
       ),
