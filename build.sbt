@@ -1,7 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import scala.sys.process.Process
 
-val munit = "org.scalameta" %% "munit" % "1.0.4" % Test
+val munit = "org.scalameta" %% "munit" % "1.1.0" % Test
 
 val updateDocs = taskKey[Unit]("Updates README.md")
 

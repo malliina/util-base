@@ -33,6 +33,8 @@ object NonBlank:
     if trimmed.nonEmpty then Right(trimmed)
     else Left(ErrorMessage("Must not be blank."))
 
+  extension (nb: NonBlank) def append(s: String): NonBlank = s"$nb$s"
+
   given Codec[NonBlank] = Codec.from(
     Decoder.decodeString.emap(i => apply(i).left.map(_.message)),
     Encoder.encodeString.contramap(identity)

@@ -14,6 +14,9 @@ trait Literals:
       ${ Impls.NonBlankLiteral('ctx, 'args) }
     inline def err(inline args: Any*): ErrorMessage =
       ${ Impls.ErrorMessageLiteral('ctx, 'args) }
+    inline def error(args: Any*): ErrorMessage =
+      val msg = ctx.s(args*)
+      ErrorMessage(msg)
 
 private object Impls:
   object NonNegLiteral extends LiteralInt[NonNeg]:
