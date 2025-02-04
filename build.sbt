@@ -53,11 +53,11 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(okClient)
   .settings(
-    libraryDependencies ++=
-      Seq("classic", "core").map(m => "ch.qos.logback" % s"logback-$m" % "1.5.16") ++ Seq(
-        "co.fs2" %% "fs2-core" % "3.11.0",
-        "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
-      ),
+    libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % "2.0.16",
+      "co.fs2" %% "fs2-core" % "3.11.0",
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
+    ),
     releaseProcess := tagReleaseProcess.value
   )
 
