@@ -9,7 +9,7 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := "3.3.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.14" :: "2.12.20" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.16" :: "2.12.20" :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg"
@@ -18,7 +18,7 @@ inThisBuild(
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % "0.14.10") ++ Seq(munit)
+    .map(m => "io.circe" %% s"circe-$m" % "0.14.12") ++ Seq(munit)
 )
 val primitives = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)

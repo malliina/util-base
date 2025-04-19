@@ -33,3 +33,7 @@ private object FullUrlLiterals:
         .build(in)
         .map: url =>
           '{ FullUrl.build(${ Expr(in) }).getUnsafe }
+
+extension (url: FullUrl)
+  def query[Q: KeyValues](q: Q): FullUrl =
+    url.query(KeyValues[Q].kvs(q))

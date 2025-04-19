@@ -39,11 +39,16 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     append(s"$firstChar$asString")
   }
 
+  def query(kvs: List[KeyValue]): FullUrl = {
+    val pairs = kvs.map(kv => kv.key -> kv.value)
+    withQuery(pairs: _*)
+  }
+
   override def toString: String = url
 }
 
 object FullUrl extends ValidatingCompanion[String, FullUrl] {
-  val urlPattern = Pattern compile """(.+)://([^/]+)(/?.*)"""
+  val urlPattern = Pattern.compile("""(.+)://([^/?]+)(/?.*)""")
 
   def https(domain: String, uri: String): FullUrl =
     FullUrl("https", dropHttps(domain), uri)
