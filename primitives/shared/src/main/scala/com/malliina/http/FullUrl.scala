@@ -29,8 +29,13 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     *   a new URL with the query strings applied
     */
   def query(map: Map[String, String]): FullUrl = {
-    val encoded = map.mapValues(v => URLEncoder.encode(v, StandardCharsets.UTF_8.name()))
+    val encoded = map.mapValues(v => encode(v))
     withQuery(encoded.toSeq: _*)
+  }
+
+  def query(kvs: List[KeyValue]): FullUrl = {
+    val pairs = kvs.map(kv => kv.key -> encode(kv.value))
+    withQuery(pairs: _*)
   }
 
   def withQuery(qs: (String, String)*): FullUrl = {
@@ -39,10 +44,7 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
     append(s"$firstChar$asString")
   }
 
-  def query(kvs: List[KeyValue]): FullUrl = {
-    val pairs = kvs.map(kv => kv.key -> kv.value)
-    withQuery(pairs: _*)
-  }
+  private def encode(s: String) = URLEncoder.encode(s, StandardCharsets.UTF_8.name())
 
   override def toString: String = url
 }
