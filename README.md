@@ -10,7 +10,7 @@ This repo contains the following reusable modules:
 Basic data types, compiled both to JVM and Scala.js.
 
 ```scala
-libraryDependencies += "com.malliina" %% "primitives" % "3.7.9"
+libraryDependencies += "com.malliina" %% "primitives" % "3.7.10"
 ```
 
 ## okclient
@@ -18,7 +18,7 @@ libraryDependencies += "com.malliina" %% "primitives" % "3.7.9"
 A Scala Futures-enabled HTTP client. Wraps okhttp.
 
 ```scala
-libraryDependencies += "com.malliina" %% "okclient" % "3.7.9"
+libraryDependencies += "com.malliina" %% "okclient" % "3.7.10"
 ```
 
 ## okclient-io
@@ -26,7 +26,7 @@ libraryDependencies += "com.malliina" %% "okclient" % "3.7.9"
 An HTTP client built on https://typelevel.org/cats-effect/. Wraps okhttp.
 
 ```scala
-libraryDependencies += "com.malliina" %% "okclient-io" % "3.7.9"
+libraryDependencies += "com.malliina" %% "okclient-io" % "3.7.10"
 ```
 
 ## config
@@ -34,7 +34,7 @@ libraryDependencies += "com.malliina" %% "okclient-io" % "3.7.9"
 Wrapper for Typesafe config.
 
 ```scala
-libraryDependencies += "com.malliina" %% "config" % "3.7.9"
+libraryDependencies += "com.malliina" %% "config" % "3.7.10"
 ```
 
 # Releasing
