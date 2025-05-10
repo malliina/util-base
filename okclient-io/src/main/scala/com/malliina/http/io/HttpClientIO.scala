@@ -12,7 +12,14 @@ import java.io.IOException
 
 object HttpClientIO {
   def resource[F[_]: Async]: Resource[F, HttpClientF2[F]] =
-    Resource.make(Async[F].delay(new HttpClientF2()))(c => Async[F].delay(c.close()))
+    configure(identity)
+
+  def configure[F[_]: Async](
+    customize: OkHttpClient.Builder => OkHttpClient.Builder = identity
+  ): Resource[F, HttpClientF2[F]] =
+    Resource.make(Async[F].delay(new HttpClientF2(OkClient.newClient(customize))))(c =>
+      Async[F].delay(c.close())
+    )
 
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
 
@@ -22,9 +29,8 @@ object HttpClientIO {
 
   def run[F[_]: Async](call: Call): F[Response] = Async[F].async_ { cb =>
     call.enqueue(new Callback {
-      override def onResponse(call: Call, response: Response): Unit = {
+      override def onResponse(call: Call, response: Response): Unit =
         cb(Right(response))
-      }
 
       override def onFailure(call: Call, e: IOException): Unit =
         cb(Left(e))

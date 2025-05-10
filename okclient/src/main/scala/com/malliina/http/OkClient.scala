@@ -22,16 +22,18 @@ object OkClient {
   def apply(client: OkHttpClient = okHttpClient): OkClient =
     new OkClient(client, defaultExecutionContext())
 
-  def okHttpClient: OkHttpClient =
-    new OkHttpClient.Builder()
-      .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
-      .build()
+  def okHttpClient: OkHttpClient = newClient()
 
   def sslClient(ssf: SSLSocketFactory, tm: X509TrustManager): OkHttpClient =
-    new OkHttpClient.Builder()
-      .sslSocketFactory(ssf, tm)
+    newClient(_.sslSocketFactory(ssf, tm))
+
+  def newClient(
+    customize: OkHttpClient.Builder => OkHttpClient.Builder = identity
+  ): OkHttpClient = {
+    val builder = new OkHttpClient.Builder()
       .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
-      .build()
+    customize(builder).build()
+  }
 
   def defaultExecutionContext() =
     ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
@@ -62,13 +64,12 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
     *   type of result
     * @return
     */
-  def streamed[T](request: Request)(consume: Response => Future[T]): Future[T] = {
+  def streamed[T](request: Request)(consume: Response => Future[T]): Future[T] =
     raw(request).flatMap { r =>
       val work = consume(r)
       work.onComplete(_ => r.close())
       work
     }
-  }
 
   /** Remember to close the response body if calling this method. If you don't need to stream the
     * response, call `execute` instead.

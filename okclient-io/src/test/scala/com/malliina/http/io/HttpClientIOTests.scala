@@ -24,7 +24,7 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
 
   httpFixture.test("can make io request".ignore) { client =>
     val res = client.get(FullUrl("http", "www.google.com", ""))
-    res.map { r => assert(r.isSuccess) }
+    res.map(r => assert(r.isSuccess))
   }
 
   httpFixture.test("websocket".ignore) { client =>
