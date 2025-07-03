@@ -6,7 +6,6 @@ import com.malliina.values.StringEnumCompanion
 import okhttp3.Response
 
 import scala.collection.JavaConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
-import scala.util.Try
 
 object OkHttpResponse {
   def apply(response: Response): OkHttpResponse = new OkHttpResponse(response)

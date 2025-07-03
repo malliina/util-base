@@ -53,10 +53,11 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
   ): Resource[F, WebSocketF[F]] = WebSocketF.build(url, headers, client)
 }
 
-abstract class HttpClientF[F[_]]()(implicit F: MonadError[F, Throwable]) extends HttpClient[F] {
+abstract class HttpClientF[F[_]: Sync]()(implicit F: MonadError[F, Throwable])
+  extends HttpClient[F] {
   override def execute(request: Request): F[OkHttpResponse] =
     F.map(raw(request))(OkHttpResponse.apply)
   override def flatMap[T, U](t: F[T])(f: T => F[U]): F[U] = F.flatMap(t)(f)
-  override def success[T](t: T): F[T] = F.pure(t)
+  override def success[T](t: T): F[T] = Sync[F].blocking(t)
   override def fail[T](e: Exception): F[T] = F.raiseError(e)
 }

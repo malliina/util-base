@@ -163,6 +163,20 @@ trait HttpClient[F[_]] extends Closeable {
       }
     }
 
+  def fetchBytes(
+    url: FullUrl,
+    headers: Map[String, String]
+  ): F[Array[Byte]] = {
+    val req = requestFor(url, headers).build()
+    streamed(req) { response =>
+      if (response.isSuccessful) {
+        success(response.body().bytes())
+      } else {
+        fail(StatusError(OkHttpResponse(response), url).toException)
+      }
+    }
+  }
+
   def streamed[T](request: Request)(consume: Response => F[T]): F[T]
 
   def execute(request: Request): F[OkHttpResponse]

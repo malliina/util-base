@@ -86,7 +86,7 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
   }
 
   override def flatMap[T, U](t: Future[T])(f: T => Future[U]): Future[U] = t.flatMap(f)
-  override def success[T](t: T): Future[T] = Future.successful(t)
+  override def success[T](t: T): Future[T] = Future(t)
   override def fail[T](e: Exception): Future[T] = Future.failed(e)
 }
 
