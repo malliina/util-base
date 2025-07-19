@@ -19,9 +19,9 @@ object Utils {
     finally resource.close()
 
   def optionally[T, U <: Throwable](attempt: => T)(implicit manifest: Manifest[U]): Either[U, T] =
-    try {
+    try
       Right(attempt)
-    } catch {
+    catch {
       case u: U => Left(u)
     }
 

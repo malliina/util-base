@@ -37,9 +37,9 @@ case class SemanticVersion(version: String) {
 
 object SemanticVersion {
   def parse(version: String): Either[NumberFormatException, SemanticVersion] =
-    try {
+    try
       Right(SemanticVersion(version))
-    } catch {
+    catch {
       case nfe: NumberFormatException => Left(nfe)
     }
 }

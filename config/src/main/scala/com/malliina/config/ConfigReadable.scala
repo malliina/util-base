@@ -101,9 +101,9 @@ object ConfigReadable {
     position: List[String],
     unsafe: String => T
   ): Either[ConfigError, Option[T]] =
-    try {
+    try
       Right(Option(unsafe(key)))
-    } catch {
+    catch {
       case m: ConfigException.Missing =>
         Right(None)
       case e: Exception =>

@@ -7,15 +7,15 @@ import scala.concurrent.duration.Duration
 
 trait Futures {
   def before[T, TO](other: Future[TO])(f: Future[T])(implicit ec: ExecutionContext): Future[T] =
-    promisedFuture[T](p => {
+    promisedFuture[T] { p =>
       f.onComplete(result => if (!p.isCompleted) p.tryComplete(result))
-      other.onComplete(_ => {
+      other.onComplete(_ =>
         if (!p.isCompleted)
           p.tryFailure(
             new TimeoutException(s"Unable to complete task within the given time limit.")
           )
-      })
-    })
+      )
+    }
 
   /** Constructs a future that is completed according to `keepPromise`. This pattern can be used to
     * convert callback-based APIs to Future-based ones. For example, parameter `keepPromise` can

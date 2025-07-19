@@ -131,7 +131,7 @@ class WebSocketF[F[_]: Async](
   private val eventsOrFailure: Stream[F, SocketEvent] = allEvents.flatMap {
     case f @ Failure(_, t, _) =>
       val logging = delay {
-        t.map { ex => log.warn(s"Connection to '$url' failed exceptionally.", ex) }.getOrElse {
+        t.map(ex => log.warn(s"Connection to '$url' failed exceptionally.", ex)).getOrElse {
           log.warn(s"Connection to '$url' failed.")
         }
       }
