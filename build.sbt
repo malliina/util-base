@@ -8,7 +8,7 @@ val versions = new {
 
   val catsEffect = "3.5.4"
   val circe = "0.14.14"
-  val config = "1.4.3"
+  val config = "1.4.4"
   val fs2 = "3.11.0"
   val munit = "1.1.1"
   val munitCats = "1.0.7"
@@ -52,8 +52,7 @@ val utilBase = project
     releaseProcess := tagReleaseProcess.value
   )
 
-val httpClient = project
-  .in(file("http-client"))
+val httpClient = Project("http-client", file("http-client"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
@@ -118,7 +117,7 @@ val docs = project
 
 val utilBaseRoot = project
   .in(file("."))
-  .aggregate(utilBase, primitivesJvm, primitivesJs, okClient, okClientIo, config)
+  .aggregate(utilBase, primitivesJvm, primitivesJs, httpClient, okClient, okClientIo, config)
   .settings(
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))),
     publish / skip := true,
