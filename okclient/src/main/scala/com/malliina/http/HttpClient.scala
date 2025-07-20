@@ -27,7 +27,7 @@ trait HttpClient[F[_]] extends Closeable {
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
     get(url, headers).flatMap(r => parse[T](r, url))
 
-  def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[OkHttpResponse] = {
+  def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[HttpResponse] = {
     val req = requestFor(url, headers)
     execute(req.get().build())
   }
@@ -64,14 +64,14 @@ trait HttpClient[F[_]] extends Closeable {
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
-  ): F[OkHttpResponse] =
+  ): F[HttpResponse] =
     post(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
 
   def putJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
-  ): F[OkHttpResponse] =
+  ): F[HttpResponse] =
     put(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
 
   def postFile(
@@ -79,14 +79,14 @@ trait HttpClient[F[_]] extends Closeable {
     mediaType: MediaType,
     file: Path,
     headers: Map[String, String] = Map.empty
-  ): F[OkHttpResponse] =
+  ): F[HttpResponse] =
     post(url, RequestBody.create(file.toFile, mediaType), headers)
 
   def postForm(
     url: FullUrl,
     form: Map[String, String],
     headers: Map[String, String] = Map.empty
-  ): F[OkHttpResponse] = {
+  ): F[HttpResponse] = {
     val bodyBuilder = new FormBody.Builder(StandardCharsets.UTF_8)
     form foreach { case (k, v) =>
       bodyBuilder.add(k, v)
@@ -99,7 +99,7 @@ trait HttpClient[F[_]] extends Closeable {
     headers: Map[String, String] = Map.empty,
     parts: Map[String, String] = Map.empty,
     files: Seq[MultiPartFile] = Nil
-  ): F[OkHttpResponse] = {
+  ): F[HttpResponse] = {
     val bodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM)
     parts.foreach { case (k, v) =>
       bodyBuilder.addFormDataPart(k, v)
@@ -118,21 +118,21 @@ trait HttpClient[F[_]] extends Closeable {
     url: FullUrl,
     body: RequestBody,
     headers: Map[String, String]
-  ): F[OkHttpResponse] =
+  ): F[HttpResponse] =
     postPut(url, headers, _.post(body))
 
   def put(
     url: FullUrl,
     body: RequestBody,
     headers: Map[String, String]
-  ): F[OkHttpResponse] =
+  ): F[HttpResponse] =
     postPut(url, headers, _.put(body))
 
   private def postPut(
     url: FullUrl,
     headers: Map[String, String],
     installBody: Request.Builder => Request.Builder
-  ): F[OkHttpResponse] = {
+  ): F[HttpResponse] = {
     val builder = installBody(requestFor(url, headers))
     execute(builder.build())
   }
@@ -179,7 +179,7 @@ trait HttpClient[F[_]] extends Closeable {
 
   def streamed[T](request: Request)(consume: Response => F[T]): F[T]
 
-  def execute(request: Request): F[OkHttpResponse]
+  def execute(request: Request): F[HttpResponse]
 
   def raw(request: Request): F[Response]
 
@@ -196,7 +196,7 @@ trait HttpClient[F[_]] extends Closeable {
     * @return
     *   a parsed response
     */
-  def parse[T: Decoder](response: OkHttpResponse, url: FullUrl): F[T] =
+  def parse[T: Decoder](response: HttpResponse, url: FullUrl): F[T] =
     if (response.isSuccess) {
       response
         .parse[T]

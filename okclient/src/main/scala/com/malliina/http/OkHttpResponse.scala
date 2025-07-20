@@ -9,9 +9,9 @@ object OkHttpResponse {
 }
 
 class OkHttpResponse(val inner: Response) extends HttpResponse {
-  val body = Option(inner.body())
+  val innerBody = Option(inner.body())
   // Intentionally reads the body eagerly
-  val string = body.map(_.string())
+  val string = innerBody.map(_.string())
   override val asString = string.getOrElse("")
 
   def code: Int = inner.code()

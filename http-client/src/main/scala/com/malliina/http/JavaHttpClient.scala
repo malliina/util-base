@@ -186,7 +186,9 @@ class JavaHttpClient[F[_]: Async](javaHttp: HttpClient) {
       } else {
         BodyHandlers
           .ofString()
-          .map[Either[ResponseError, T]](_ => Left(StatusError(meta, url)))(res)
+          .map[Either[ResponseError, T]](str =>
+            Left(StatusError(JavaBodyResponse(meta, str), url))
+          )(res)
       }
     }
 

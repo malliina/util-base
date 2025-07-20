@@ -19,6 +19,12 @@ class StringResponse(inner: JHttpResponse[String]) extends HttpResponse {
   override def code: Int = inner.statusCode()
 }
 
+class JavaBodyResponse(meta: JavaResponseMeta, body: String) extends HttpResponse {
+  override def asString: String = body
+  override def headers: Map[String, Seq[String]] = meta.headers
+  override def code: Int = meta.code
+}
+
 class JavaResponseMeta(inner: ResponseInfo) extends ResponseMeta {
   override def headers: Map[String, Seq[String]] = inner
     .headers()

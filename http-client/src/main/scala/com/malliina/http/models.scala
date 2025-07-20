@@ -11,7 +11,12 @@ trait ResponseMeta {
   def isSuccess: Boolean = code >= 200 && code < 300
 }
 
-trait HttpResponse extends ResponseMeta {
+trait ResponseContent[T] extends ResponseMeta {
+  def body: T
+}
+
+trait HttpResponse extends ResponseContent[String] {
+  def body: String = asString
 
   /** @return
     *   the body as a string
@@ -45,7 +50,7 @@ sealed trait ResponseError {
   def toException: ResponseException = new ResponseException(this)
 }
 
-case class StatusError(response: ResponseMeta, url: FullUrl) extends ResponseError
+case class StatusError(response: HttpResponse, url: FullUrl) extends ResponseError
 
 case class JsonError(error: io.circe.Error, response: ResponseMeta, url: FullUrl)
   extends ResponseError
