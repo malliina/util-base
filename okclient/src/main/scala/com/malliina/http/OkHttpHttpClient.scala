@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import com.malliina.http.HttpClient.requestFor
+import com.malliina.http.OkHttpHttpClient.requestFor
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax._
 
@@ -12,22 +12,22 @@ import okhttp3._
 
 import java.io.Closeable
 
-object HttpClient {
+object OkHttpHttpClient {
   def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
     headers.foldLeft(new Request.Builder().url(url.url)) { case (r, (key, value)) =>
       r.addHeader(key, value)
     }
 }
 
-trait HttpClient[F[_]] extends Closeable {
+trait OkHttpHttpClient[F[_]] extends HttpClient[F] with Closeable {
   implicit class FOps[T](f: F[T]) {
-    def flatMap[U](code: T => F[U]): F[U] = HttpClient.this.flatMap(f)(code)
+    def flatMap[U](code: T => F[U]): F[U] = OkHttpHttpClient.this.flatMap(f)(code)
   }
 
-  def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
+  override def getAs[T: Decoder](url: FullUrl, headers: Map[String, String]): F[T] =
     get(url, headers).flatMap(r => parse[T](r, url))
 
-  def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[HttpResponse] = {
+  override def get(url: FullUrl, headers: Map[String, String]): F[HttpResponse] = {
     val req = requestFor(url, headers)
     execute(req.get().build())
   }
@@ -76,9 +76,17 @@ trait HttpClient[F[_]] extends Closeable {
 
   def postFile(
     url: FullUrl,
-    mediaType: MediaType,
+    mediaType: String,
     file: Path,
     headers: Map[String, String] = Map.empty
+  ): F[HttpResponse] =
+    postFile(url, MediaType.parse(mediaType), file, headers)
+
+  def postFile(
+    url: FullUrl,
+    mediaType: MediaType,
+    file: Path,
+    headers: Map[String, String]
   ): F[HttpResponse] =
     post(url, RequestBody.create(file.toFile, mediaType), headers)
 
@@ -160,6 +168,22 @@ trait HttpClient[F[_]] extends Closeable {
             Files.copy(response.body().byteStream(), to, StandardCopyOption.REPLACE_EXISTING).bytes
           )
         else Left(StatusError(OkHttpResponse(response), url))
+      }
+    }
+
+  def downloadFile(
+    url: FullUrl,
+    to: Path,
+    headers: Map[String, String] = Map.empty
+  ): F[Path] =
+    streamed(requestFor(url, headers).get().build()) { response =>
+      if (response.isSuccessful) {
+        success {
+          Files.copy(response.body().byteStream(), to, StandardCopyOption.REPLACE_EXISTING).bytes
+          to
+        }
+      } else {
+        fail(StatusError(OkHttpResponse(response), url).toException)
       }
     }
 

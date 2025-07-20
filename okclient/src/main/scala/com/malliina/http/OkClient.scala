@@ -47,7 +47,7 @@ object OkClient {
 }
 
 class OkClient(val client: OkHttpClient, ec: ExecutionContext)
-  extends HttpClient[Future]
+  extends OkHttpHttpClient[Future]
   with OkHttpBackend {
   implicit val exec: ExecutionContext = ec
 

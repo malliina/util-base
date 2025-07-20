@@ -5,8 +5,8 @@ import cats.effect.implicits.monadCancelOps_
 import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
-import com.malliina.http.{FullUrl, HttpClient, HttpResponse, OkClient, OkHttpBackend, OkHttpResponse}
-import okhttp3.*
+import com.malliina.http.{FullUrl, OkHttpHttpClient, HttpResponse, OkClient, OkHttpBackend, OkHttpResponse}
+import okhttp3._
 
 import java.io.IOException
 
@@ -54,7 +54,7 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
 }
 
 abstract class HttpClientF[F[_]: Sync]()(implicit F: MonadError[F, Throwable])
-  extends HttpClient[F] {
+  extends OkHttpHttpClient[F] {
   override def execute(request: Request): F[HttpResponse] =
     F.map(raw(request))(OkHttpResponse.apply)
   override def flatMap[T, U](t: F[T])(f: T => F[U]): F[U] = F.flatMap(t)(f)

@@ -2,8 +2,8 @@ package com.malliina.http.io
 
 import cats.effect.IO
 import cats.effect.kernel.{Ref, Temporal}
-import com.malliina.http.{FullUrl, HttpClient}
-import com.malliina.http.HttpClient.requestFor
+import com.malliina.http.{FullUrl, OkHttpHttpClient}
+import com.malliina.http.OkHttpHttpClient.requestFor
 import com.malliina.http.io.SocketEvent.{BytesMessage, Open}
 import com.malliina.values.Username
 import munit.FunSuite

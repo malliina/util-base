@@ -4,7 +4,7 @@ import cats.effect.{Async, Sync}
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.all._
-import com.malliina.http.{FullUrl, HttpClient}
+import com.malliina.http.{FullUrl, OkHttpHttpClient}
 import com.malliina.http.io.SocketEvent._
 import com.malliina.http.io.WebSocketF.log
 import com.malliina.util.AppLogger
@@ -194,7 +194,7 @@ class WebSocketF[F[_]: Async](
       delay(active.get().foreach(_.cancel()))
 
   def requestFor(url: FullUrl, headers: Map[String, String]): Request.Builder =
-    HttpClient.requestFor(url, headers)
+    OkHttpHttpClient.requestFor(url, headers)
 
   private def delay[A](thunk: => A) = Sync[F].delay(thunk)
 }

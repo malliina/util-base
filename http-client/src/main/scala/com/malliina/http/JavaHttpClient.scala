@@ -4,16 +4,17 @@ import cats.effect.Async
 import cats.syntax.all.{toFlatMapOps, toFunctorOps}
 import com.malliina.http.Ops.{BodyHandlerOps, CompletableFutureOps}
 import com.malliina.http.JavaHttpClient.{bodyRequest, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
+import com.malliina.storage.{StorageLong, StorageSize}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, parser}
 import jdk.internal.net.http.common.Utils.charsetFrom
-
+import cats.syntax.all.catsSyntaxApplicativeError
 import java.net.URLEncoder
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.HttpResponse._
-import java.net.http.{HttpClient, HttpRequest, HttpResponse => JHttpResponse}
+import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.util.concurrent.CompletableFuture
 
 object JavaHttpClient extends HttpHeaders {
@@ -64,7 +65,7 @@ object JavaHttpClient extends HttpHeaders {
     url: FullUrl,
     headers: Map[String, String],
     base: HttpRequest.Builder = HttpRequest.newBuilder()
-  ) =
+  ): HttpRequest.Builder =
     headers
       .foldLeft(base) { case (b, (k, v)) =>
         b.header(k, v)
@@ -74,7 +75,7 @@ object JavaHttpClient extends HttpHeaders {
 
 }
 
-class JavaHttpClient[F[_]: Async](javaHttp: HttpClient) {
+class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
   private val F = Async[F]
 
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
@@ -132,7 +133,23 @@ class JavaHttpClient[F[_]: Async](javaHttp: HttpClient) {
     bodyRequest(HttpMethod.Post, url, BodyPublishers.ofFile(file), mediaType, headers)
   )
 
-  def download(url: FullUrl, to: Path, headers: Map[String, String] = Map.empty): F[Path] =
+  def download(
+    url: FullUrl,
+    to: Path,
+    headers: Map[String, String] = Map.empty
+  ): F[Either[StatusError, StorageSize]] =
+    downloadFile(url, to, headers)
+      .map[Either[StatusError, StorageSize]] { path =>
+        Right(Files.size(path).bytes)
+      }
+      .recoverWith { case re: ResponseException =>
+        re.error match {
+          case se: StatusError => Async[F].pure(Left(se))
+          case other           => Async[F].raiseError(re)
+        }
+      }
+
+  def downloadFile(url: FullUrl, to: Path, headers: Map[String, String] = Map.empty): F[Path] =
     fetchFold(
       requestFor(url, headers),
       okBodyParser(url, BodyHandlers.ofFile(to))
@@ -187,7 +204,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: HttpClient) {
         BodyHandlers
           .ofString()
           .map[Either[ResponseError, T]](str =>
-            Left(StatusError(JavaBodyResponse(meta, str), url))
+            Left(StatusError(new JavaBodyResponse(meta, str), url))
           )(res)
       }
     }
