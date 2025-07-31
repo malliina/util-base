@@ -57,6 +57,7 @@ val httpClient = Project("http-client", file("http-client"))
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
+      "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
       munit
     ),

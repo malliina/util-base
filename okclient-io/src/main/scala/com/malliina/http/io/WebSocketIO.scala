@@ -3,16 +3,16 @@ package com.malliina.http.io
 import cats.effect.{Async, Sync}
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
-import cats.syntax.all._
-import com.malliina.http.{FullUrl, OkHttpHttpClient}
-import com.malliina.http.io.SocketEvent._
+import cats.syntax.all.*
+import com.malliina.http.{FullUrl, OkHttpHttpClient, SocketEvent}
+import com.malliina.http.SocketEvent.*
 import com.malliina.http.io.WebSocketF.log
 import com.malliina.util.AppLogger
 import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
-import io.circe._
+import io.circe.*
 import io.circe.syntax.EncoderOps
-import okhttp3._
+import okhttp3.*
 import okio.ByteString
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -90,28 +90,28 @@ class WebSocketF[F[_]: Async](
   private val listener: WebSocketListener = new WebSocketListener {
     override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closed  socket to '$url'.")
-      publish(Closed(webSocket, code, reason))
+      publish(Closed(url, code, reason))
     }
     override def onClosing(webSocket: WebSocket, code: Int, reason: String): Unit = {
       log.info(s"Closing socket to '$url'.")
-      publish(Closing(webSocket, code, reason))
+      publish(Closing(url, code, reason))
     }
     override def onFailure(webSocket: WebSocket, t: Throwable, response: Response): Unit = {
       if (!interrupted.get())
         log.warn(s"Socket to '$url' failed.", t)
-      publish(Failure(webSocket, Option(t), Option(response)))
+      publish(Failure(url, Option(t)))
     }
     override def onMessage(webSocket: WebSocket, text: String): Unit = {
       log.debug(s"Received text '$text'.")
-      publish(TextMessage(webSocket, text))
+      publish(TextMessage(url, text))
     }
     override def onMessage(webSocket: WebSocket, bytes: ByteString): Unit = {
       log.debug(s"Received bytes $bytes")
-      publish(BytesMessage(webSocket, bytes))
+      publish(BytesMessage(url, bytes.toByteArray))
     }
     override def onOpen(webSocket: WebSocket, response: Response): Unit = {
       log.info(s"Opened socket to '$url'.")
-      publish(Open(webSocket, response))
+      publish(Open(url))
     }
   }
   val request: Request = requestFor(url, headers).build()
@@ -125,11 +125,11 @@ class WebSocketF[F[_]: Async](
       Stream.sleep(backoffTime).map(_ => Idle)
     }
   private val untilFailure: Stream[F, SocketEvent] = allEvents.takeWhile {
-    case Failure(_, _, _) => false
-    case _                => true
+    case Failure(_, _) => false
+    case _             => true
   }
   private val eventsOrFailure: Stream[F, SocketEvent] = allEvents.flatMap {
-    case f @ Failure(_, t, _) =>
+    case f @ Failure(_, t) =>
       val logging = delay {
         t.map(ex => log.warn(s"Connection to '$url' failed exceptionally.", ex)).getOrElse {
           log.warn(s"Connection to '$url' failed.")

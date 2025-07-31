@@ -1,21 +1,22 @@
 package com.malliina.http
 
-import cats.effect.Async
+import cats.effect.{Async, Resource}
 import cats.syntax.all.{toFlatMapOps, toFunctorOps}
-import com.malliina.http.Ops.{BodyHandlerOps, CompletableFutureOps}
+import com.malliina.http.Ops.{BodyHandlerOps, CompletionStageOps}
 import com.malliina.http.JavaHttpClient.{bodyRequest, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
 import com.malliina.storage.{StorageLong, StorageSize}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, parser}
 import jdk.internal.net.http.common.Utils.charsetFrom
 import cats.syntax.all.catsSyntaxApplicativeError
-import java.net.URLEncoder
+
+import java.net.{URI, URLEncoder}
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.net.http.HttpResponse._
-import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
+import java.net.http.HttpResponse.*
+import java.net.http.{HttpRequest, HttpClient as JHttpClient, HttpResponse as JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, Executor}
 
 object JavaHttpClient extends HttpHeaders {
   def requestFor(url: FullUrl, headers: Map[String, String]): HttpRequest =
@@ -158,6 +159,9 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
   def fetchBytes(url: FullUrl, headers: Map[String, String]): F[Array[Byte]] =
     fetchFold(requestFor(url, headers), okBodyParser(url, BodyHandlers.ofByteArray()))
 
+  def socket(url: FullUrl, headers: Map[String, String], executor: Executor): Resource[F, WebSocket[F]] =
+    WebSocket.build[F](url, headers, javaHttp, executor)
+
   private def fetchJson[T: Decoder](request: HttpRequest, url: FullUrl): F[T] =
     fetchFold(request, jsonBodyParser[T](url))
 
@@ -212,14 +216,3 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
   private def fail[T](error: ResponseError): F[T] = F.raiseError(error.toException)
 }
 
-object Ops {
-  implicit class BodyHandlerOps[T](bh: BodyHandler[T]) {
-    def map[U](f: T => U): BodyHandler[U] = (res: ResponseInfo) =>
-      BodySubscribers.mapping(bh(res), t => f(t))
-  }
-  implicit class CompletableFutureOps[T](cf: CompletableFuture[T]) {
-    def effect[F[_]: Async]: F[T] = Async[F].async_ { cb =>
-      cf.whenComplete((r, t) => Option(t).fold(cb(Right(r)))(t => cb(Left(t))))
-    }
-  }
-}
