@@ -11,7 +11,7 @@ object HttpClient {
   def javaResource[F[_]: Sync](
     builder: JHttpClient.Builder = JHttpClient.newBuilder()
   ): Resource[F, JHttpClient] =
-    Resource.make[F, JHttpClient](Sync[F].delay(builder.build()))(c => Sync[F].delay(c.close()))
+    Resource.make[F, JHttpClient](Sync[F].delay(builder.build()))(c => Sync[F].delay(()))
   def resource[F[_]: Async](
     builder: JHttpClient.Builder = JHttpClient.newBuilder()
   ): Resource[F, JavaHttpClient[F]] =

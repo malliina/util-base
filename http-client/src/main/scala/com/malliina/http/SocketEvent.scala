@@ -1,7 +1,5 @@
 package com.malliina.http
 
-import com.malliina.http.FullUrl
-
 sealed trait SocketEvent
 
 object SocketEvent {

@@ -1,23 +1,33 @@
 package com.malliina.http
 
+import cats.effect.std.Dispatcher
 import cats.effect.{Async, Resource}
 import cats.syntax.all.toFunctorOps
 import com.malliina.http.Ops.CompletionStageOps
+import com.malliina.http.SocketEvent.{BytesMessage, Failure, TextMessage}
 import fs2.concurrent.Topic
+import fs2.concurrent.Topic.Closed
 
 import java.net.URI
-import java.net.http.{HttpClient as JHttpClient, WebSocket as JWebSocket}
+import java.net.http.{HttpClient => JHttpClient, WebSocket => JWebSocket}
 import java.nio.ByteBuffer
-import java.util.concurrent.{CompletableFuture, CompletionStage, Executor}
+import java.util.concurrent.{CompletionStage, Executor}
 
 object WebSocket {
-  private class CompletionOps[F[_], A](fa: F[A]) {
-    def toJava: CompletionStage[A] = fa
+  implicit class CompletionOps[F[_], A](fa: F[A]) {
+    def toFuture(d: Dispatcher[F]): CompletionStage[A] =
+      d.unsafeToCompletableFuture(fa)
+    def await(d: Dispatcher[F]): A =
+      d.unsafeRunSync(fa)
   }
-  class TopicListener[F[_]](topic: Topic[F, SocketEvent], url: FullUrl, executor: Executor)
-    extends JWebSocket.Listener {
+  private class TopicListener[F[_]](
+    topic: Topic[F, SocketEvent],
+    d: Dispatcher[F],
+    url: FullUrl,
+    executor: Executor
+  ) extends JWebSocket.Listener {
     override def onOpen(webSocket: JWebSocket): Unit = {
-      topic.publish1(SocketEvent.Open(url))
+      publishSync(SocketEvent.Open(url))
       super.onOpen(webSocket)
     }
 
@@ -26,14 +36,16 @@ object WebSocket {
       data: CharSequence,
       last: Boolean
     ): CompletionStage[?] =
-      CompletableFuture.supplyAsync(???, executor).thenCompose(_ => super.onText(webSocket, data, last))
+      publish(TextMessage(url, data.toString))
+        .thenCompose(_ => super.onText(webSocket, data, last))
 
     override def onBinary(
       webSocket: JWebSocket,
       data: ByteBuffer,
       last: Boolean
     ): CompletionStage[?] =
-      super.onBinary(webSocket, data, last)
+      publish(BytesMessage(url, data.array()))
+        .thenCompose(_ => super.onBinary(webSocket, data, last))
 
     override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[?] =
       super.onPing(webSocket, message)
@@ -46,11 +58,21 @@ object WebSocket {
       statusCode: Int,
       reason: String
     ): CompletionStage[?] =
-      super.onClose(webSocket, statusCode, reason)
+      publish(SocketEvent.Closed(url, statusCode, reason))
+        .thenCompose(_ => super.onClose(webSocket, statusCode, reason))
 
-    override def onError(webSocket: JWebSocket, error: Throwable): Unit =
+    override def onError(webSocket: JWebSocket, error: Throwable): Unit = {
+      publishSync(Failure(url, Option(error)))
       super.onError(webSocket, error)
+    }
+
+    private def publish(e: SocketEvent): CompletionStage[Either[Closed, Unit]] =
+      topic.publish1(e).toFuture(d)
+
+    private def publishSync(e: SocketEvent): Either[Closed, Unit] =
+      topic.publish1(e).await(d)
   }
+
   def build[F[_]: Async](
     url: FullUrl,
     headers: Map[String, String],
@@ -60,7 +82,8 @@ object WebSocket {
     val b = headers.foldLeft(http.newWebSocketBuilder()) { case (c, (k, v)) => c.header(k, v) }
     for {
       topic <- Resource.eval(Topic[F, SocketEvent])
-      listener = TopicListener(topic, url, executor)
+      d <- Dispatcher.parallel[F]
+      listener = TopicListener(topic, d, url, executor)
       socket <- Resource.make(
         b.buildAsync(URI.create(url.url), listener).effect[F].map(s => WebSocket[F](s))
       )(s => s.close)
