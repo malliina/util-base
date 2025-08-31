@@ -1,9 +1,10 @@
 package com.malliina.http
 
 import cats.effect.Async
+import cats.effect.std.Dispatcher
 
 import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo}
-import java.util.concurrent.{CompletableFuture, CompletionStage}
+import java.util.concurrent.CompletionStage
 
 object Ops {
   implicit class BodyHandlerOps[T](bh: BodyHandler[T]) {
@@ -14,5 +15,12 @@ object Ops {
     def effect[F[_]: Async]: F[T] = Async[F].async_ { cb =>
       cf.whenComplete((r, t) => Option(t).fold(cb(Right(r)))(t => cb(Left(t))))
     }
+  }
+  implicit class EffectOps[F[_], A](fa: F[A]) {
+    def toFuture(d: Dispatcher[F]): CompletionStage[A] =
+      d.unsafeToCompletableFuture(fa)
+
+    def await(d: Dispatcher[F]): A =
+      d.unsafeRunSync(fa)
   }
 }

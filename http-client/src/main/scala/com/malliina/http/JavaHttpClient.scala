@@ -1,22 +1,21 @@
 package com.malliina.http
 
 import cats.effect.{Async, Resource}
-import cats.syntax.all.{toFlatMapOps, toFunctorOps}
-import com.malliina.http.Ops.{BodyHandlerOps, CompletionStageOps}
+import cats.syntax.all.{catsSyntaxApplicativeError, toFlatMapOps, toFunctorOps}
 import com.malliina.http.JavaHttpClient.{bodyRequest, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
+import com.malliina.http.Ops.{BodyHandlerOps, CompletionStageOps}
 import com.malliina.storage.{StorageLong, StorageSize}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, parser}
 import jdk.internal.net.http.common.Utils.charsetFrom
-import cats.syntax.all.catsSyntaxApplicativeError
 
-import java.net.{URI, URLEncoder}
+import java.net.URLEncoder
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.HttpResponse.*
-import java.net.http.{HttpRequest, HttpClient as JHttpClient, HttpResponse as JHttpResponse}
+import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.concurrent.{CompletableFuture, Executor}
+import java.util.concurrent.Executor
 
 object JavaHttpClient extends HttpHeaders {
   def requestFor(url: FullUrl, headers: Map[String, String]): HttpRequest =
@@ -159,7 +158,11 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
   def fetchBytes(url: FullUrl, headers: Map[String, String]): F[Array[Byte]] =
     fetchFold(requestFor(url, headers), okBodyParser(url, BodyHandlers.ofByteArray()))
 
-  def socket(url: FullUrl, headers: Map[String, String], executor: Executor): Resource[F, WebSocket[F]] =
+  def socket(
+    url: FullUrl,
+    headers: Map[String, String],
+    executor: Executor
+  ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] =
     WebSocket.build[F](url, headers, javaHttp, executor)
 
   private def fetchJson[T: Decoder](request: HttpRequest, url: FullUrl): F[T] =
@@ -215,4 +218,3 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
 
   private def fail[T](error: ResponseError): F[T] = F.raiseError(error.toException)
 }
-

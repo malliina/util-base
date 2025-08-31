@@ -57,6 +57,7 @@ val httpClient = Project("http-client", file("http-client"))
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
       munit
@@ -81,7 +82,6 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .dependsOn(okClient)
   .settings(
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "munit-cats-effect-3" % versions.munitCats % Test
     ),

@@ -1,22 +1,14 @@
 package com.malliina.http.io
 
-import cats.effect.IO
-import cats.effect.kernel.{Ref, Temporal}
+import cats.effect.{IO, SyncIO}
 import com.malliina.http.{FullUrl, OkHttpHttpClient, SocketEvent}
-import com.malliina.http.OkHttpHttpClient.requestFor
-import com.malliina.http.SocketEvent.{BytesMessage, Open}
 import com.malliina.values.Username
-import munit.FunSuite
-import okhttp3.{OkHttpClient, Response, WebSocket, WebSocketListener}
-import okhttp3.WebSocket.Factory
-import okio.ByteString
-import fs2.concurrent.Topic
 import fs2.Stream
-import cats.effect.SyncIO
+import okhttp3.WebSocket
 
-import concurrent.duration.DurationInt
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import scala.concurrent.duration.DurationInt
 
 class HttpClientIOTests extends munit.CatsEffectSuite {
   val Authorization = "Authorization"
@@ -33,8 +25,7 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
         FullUrl.wss("logs.malliina.com", "/ws/sources"),
 //        FullUrl.ws("localhost:9000", "/ws/sources"),
         Map(Authorization -> authorizationValue(Username("test"), "test1234")),
-        client.client,
-        2.seconds
+        client.client
       )
       .use { socket =>
         val events: IO[Vector[SocketEvent]] =

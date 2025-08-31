@@ -5,8 +5,8 @@ import cats.effect.implicits.monadCancelOps_
 import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
-import com.malliina.http.{FullUrl, OkHttpHttpClient, HttpResponse, OkClient, OkHttpBackend, OkHttpResponse}
-import okhttp3._
+import com.malliina.http.{FullUrl, HttpResponse, OkClient, OkHttpBackend, OkHttpHttpClient, OkHttpResponse, ReconnectingSocket}
+import okhttp3.*
 
 import java.io.IOException
 
@@ -50,7 +50,7 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
   def socket(
     url: FullUrl,
     headers: Map[String, String]
-  ): Resource[F, WebSocketF[F]] = WebSocketF.build(url, headers, client)
+  ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] = WebSocketF.build(url, headers, client)
 }
 
 abstract class HttpClientF[F[_]: Sync]()(implicit F: MonadError[F, Throwable])
