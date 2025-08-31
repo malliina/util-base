@@ -23,7 +23,7 @@ object WebSocket {
     val b = headers.foldLeft(http.newWebSocketBuilder()) { case (c, (k, v)) => c.header(k, v) }
     for {
       d <- Dispatcher.parallel[F]
-      builder = JavaSocketBuilder(url, headers, http, d, executor)
+      builder = new JavaSocketBuilder(url, headers, http, d, executor)
       s <- Resource.eval(ReconnectingSocket.build(builder))
     } yield s
   }
@@ -39,10 +39,10 @@ object WebSocket {
       c.header(k, v)
     }
     override def connect(sink: Topic[F, SocketEvent]): F[JavaSocket[F]] = delayF {
-      val listener = JavaSocketListener(sink, d, url, executor)
+      val listener = new JavaSocketListener(sink, d, url, executor)
       log.info(s"Connecting to '$url'...")
       b.buildAsync(URI.create(url.url), listener)
-    }.map(s => JavaSocket(s, url))
+    }.map(s => new JavaSocket(s, url))
   }
 
   private def delayF[F[_]: Async, A](thunk: => CompletionStage[A]): F[A] =

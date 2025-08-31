@@ -1,6 +1,8 @@
 package com.malliina.http
 
+import cats.Functor
 import cats.effect.std.Dispatcher
+import cats.syntax.all.toFunctorOps
 import com.malliina.http.Ops.EffectOps
 import com.malliina.http.SocketEvent.{BytesMessage, Failure, TextMessage}
 import fs2.concurrent.Topic
@@ -9,8 +11,18 @@ import fs2.concurrent.Topic.Closed
 import java.net.http.{WebSocket => JWebSocket}
 import java.nio.ByteBuffer
 import java.util.concurrent.{CompletionStage, Executor}
+import java.util.function
 
-class JavaSocketListener[F[_]](
+class Baa extends JWebSocket.Listener {
+  override def onText(
+    webSocket: JWebSocket,
+    data: CharSequence,
+    last: Boolean
+  ): CompletionStage[?] =
+    super.onText(webSocket, data, last)
+}
+
+class JavaSocketListener[F[_]: Functor](
   topic: Topic[F, SocketEvent],
   d: Dispatcher[F],
   url: FullUrl,
@@ -26,16 +38,31 @@ class JavaSocketListener[F[_]](
     data: CharSequence,
     last: Boolean
   ): CompletionStage[?] =
+    onTextTyped(webSocket, data, last)
+
+  def onTextTyped(
+    webSocket: JWebSocket,
+    data: CharSequence,
+    last: Boolean
+  ): CompletionStage[Either[Closed, Unit]] =
     publish(TextMessage(url, data.toString))
-      .thenCompose(_ => super.onText(webSocket, data, last))
+      .thenCompose((t: Either[Closed, Unit]) =>
+        super.onText(webSocket, data, last).thenApply(_ => Right(()))
+      )
 
   override def onBinary(
     webSocket: JWebSocket,
     data: ByteBuffer,
     last: Boolean
-  ): CompletionStage[?] =
+  ): CompletionStage[?] = onBinaryTyped(webSocket, data, last)
+
+  def onBinaryTyped(
+    webSocket: JWebSocket,
+    data: ByteBuffer,
+    last: Boolean
+  ): CompletionStage[Either[Closed, Unit]] =
     publish(BytesMessage(url, data.array()))
-      .thenCompose(_ => super.onBinary(webSocket, data, last))
+      .thenCompose(_ => super.onBinary(webSocket, data, last).thenApply(_ => Right(())))
 
   override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[?] =
     super.onPing(webSocket, message)
@@ -48,8 +75,15 @@ class JavaSocketListener[F[_]](
     statusCode: Int,
     reason: String
   ): CompletionStage[?] =
+    onCloseTyped(webSocket, statusCode, reason)
+
+  def onCloseTyped(
+    webSocket: JWebSocket,
+    statusCode: Int,
+    reason: String
+  ): CompletionStage[Either[Closed, Unit]] =
     publish(SocketEvent.Closed(url, statusCode, reason))
-      .thenCompose(_ => super.onClose(webSocket, statusCode, reason))
+      .thenCompose(_ => super.onClose(webSocket, statusCode, reason).thenApply(_ => Right(())))
 
   override def onError(webSocket: JWebSocket, error: Throwable): Unit = {
     publishSync(Failure(url, Option(error)))

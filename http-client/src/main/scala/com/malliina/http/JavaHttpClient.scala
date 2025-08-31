@@ -11,7 +11,7 @@ import jdk.internal.net.http.common.Utils.charsetFrom
 
 import java.net.URLEncoder
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.net.http.HttpResponse.*
+import java.net.http.HttpResponse._
 import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}

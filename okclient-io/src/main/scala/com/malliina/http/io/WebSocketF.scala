@@ -3,11 +3,11 @@ package com.malliina.http.io
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.effect.{Async, Sync}
-import cats.syntax.all.*
+import cats.syntax.all._
 import com.malliina.http.{FullUrl, OkHttpHttpClient, ReconnectingSocket, SocketBuilder, SocketEvent}
 import com.malliina.util.AppLogger
 import fs2.concurrent.Topic
-import okhttp3.*
+import okhttp3._
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -21,7 +21,7 @@ object WebSocketF {
   ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] =
     for {
       d <- Dispatcher.parallel[F]
-      builder = OkSocketBuilder(url, headers, client, d)
+      builder = new OkSocketBuilder(url, headers, client, d)
       s <- Resource.eval(ReconnectingSocket.build(builder))
     } yield s
 

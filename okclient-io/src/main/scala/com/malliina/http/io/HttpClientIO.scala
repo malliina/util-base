@@ -6,7 +6,7 @@ import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{FullUrl, HttpResponse, OkClient, OkHttpBackend, OkHttpHttpClient, OkHttpResponse, ReconnectingSocket}
-import okhttp3.*
+import okhttp3._
 
 import java.io.IOException
 
