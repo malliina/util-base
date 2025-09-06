@@ -1,16 +1,14 @@
 package com.malliina.http.io
 
 import cats.effect.{IO, SyncIO}
-import com.malliina.http.{FullUrl, SocketEvent}
+import com.malliina.http.{FullUrl, HttpHeaders, SocketEvent, TestAuth}
 import com.malliina.values.Username
 import fs2.Stream
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
 class HttpClientIOTests extends munit.CatsEffectSuite {
-  val Authorization = "Authorization"
+  val Authorization = HttpHeaders.Authorization
   val httpFixture: SyncIO[FunFixture[HttpClientF2[IO]]] = ResourceFixture(HttpClientIO.resource[IO])
 
   httpFixture.test("can make io request".ignore) { client =>
@@ -18,12 +16,12 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
     res.map(r => assert(r.isSuccess))
   }
 
-  httpFixture.test("websocket".ignore) { client =>
+  httpFixture.test("websocket") { client =>
     WebSocketF
       .build[IO](
         FullUrl.wss("logs.malliina.com", "/ws/sources"),
 //        FullUrl.ws("localhost:9000", "/ws/sources"),
-        Map(Authorization -> authorizationValue(Username("test"), "test1234")),
+        Map(Authorization -> TestAuth.authorizationValue(Username("test"), "test1234")),
         client.client
       )
       .use { socket =>
@@ -43,8 +41,4 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
     println(outcome)
   }
 
-  def authorizationValue(username: Username, password: String): String =
-    "Basic " + Base64.getEncoder.encodeToString(
-      s"$username:$password".getBytes(StandardCharsets.UTF_8)
-    )
 }

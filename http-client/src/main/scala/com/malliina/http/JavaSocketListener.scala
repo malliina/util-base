@@ -2,7 +2,6 @@ package com.malliina.http
 
 import cats.Functor
 import cats.effect.std.Dispatcher
-import cats.syntax.all.toFunctorOps
 import com.malliina.http.Ops.EffectOps
 import com.malliina.http.SocketEvent.{BytesMessage, Failure, TextMessage}
 import fs2.concurrent.Topic
@@ -10,23 +9,12 @@ import fs2.concurrent.Topic.Closed
 
 import java.net.http.{WebSocket => JWebSocket}
 import java.nio.ByteBuffer
-import java.util.concurrent.{CompletionStage, Executor}
-import java.util.function
-
-class Baa extends JWebSocket.Listener {
-  override def onText(
-    webSocket: JWebSocket,
-    data: CharSequence,
-    last: Boolean
-  ): CompletionStage[?] =
-    super.onText(webSocket, data, last)
-}
+import java.util.concurrent.CompletionStage
 
 class JavaSocketListener[F[_]: Functor](
   topic: Topic[F, SocketEvent],
   d: Dispatcher[F],
-  url: FullUrl,
-  executor: Executor
+  url: FullUrl
 ) extends JWebSocket.Listener {
   override def onOpen(webSocket: JWebSocket): Unit = {
     publishSync(SocketEvent.Open(url))
@@ -40,7 +28,7 @@ class JavaSocketListener[F[_]: Functor](
   ): CompletionStage[?] =
     onTextTyped(webSocket, data, last)
 
-  def onTextTyped(
+  private def onTextTyped(
     webSocket: JWebSocket,
     data: CharSequence,
     last: Boolean
@@ -56,7 +44,7 @@ class JavaSocketListener[F[_]: Functor](
     last: Boolean
   ): CompletionStage[?] = onBinaryTyped(webSocket, data, last)
 
-  def onBinaryTyped(
+  private def onBinaryTyped(
     webSocket: JWebSocket,
     data: ByteBuffer,
     last: Boolean
@@ -77,7 +65,7 @@ class JavaSocketListener[F[_]: Functor](
   ): CompletionStage[?] =
     onCloseTyped(webSocket, statusCode, reason)
 
-  def onCloseTyped(
+  private def onCloseTyped(
     webSocket: JWebSocket,
     statusCode: Int,
     reason: String

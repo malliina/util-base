@@ -9,7 +9,7 @@ import fs2.concurrent.Topic
 
 import java.net.URI
 import java.net.http.{HttpClient => JHttpClient, WebSocket => JWebSocket}
-import java.util.concurrent.{CompletionStage, Executor}
+import java.util.concurrent.CompletionStage
 
 object WebSocket {
   private val log = AppLogger(getClass)
@@ -17,13 +17,12 @@ object WebSocket {
   def build[F[_]: Async](
     url: FullUrl,
     headers: Map[String, String],
-    http: JHttpClient,
-    executor: Executor
+    http: JHttpClient
   ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] = {
     val b = headers.foldLeft(http.newWebSocketBuilder()) { case (c, (k, v)) => c.header(k, v) }
     for {
       d <- Dispatcher.parallel[F]
-      builder = new JavaSocketBuilder(url, headers, http, d, executor)
+      builder = new JavaSocketBuilder(url, headers, http, d)
       s <- Resource.eval(ReconnectingSocket.build(builder))
     } yield s
   }
@@ -32,14 +31,13 @@ object WebSocket {
     val url: FullUrl,
     headers: Map[String, String],
     http: JHttpClient,
-    d: Dispatcher[F],
-    executor: Executor
+    d: Dispatcher[F]
   ) extends SocketBuilder[F, JavaSocket[F]] {
     private val b = headers.foldLeft(http.newWebSocketBuilder()) { case (c, (k, v)) =>
       c.header(k, v)
     }
     override def connect(sink: Topic[F, SocketEvent]): F[JavaSocket[F]] = delayF {
-      val listener = new JavaSocketListener(sink, d, url, executor)
+      val listener = new JavaSocketListener(sink, d, url)
       log.info(s"Connecting to '$url'...")
       b.buildAsync(URI.create(url.url), listener)
     }.map(s => new JavaSocket(s, url))

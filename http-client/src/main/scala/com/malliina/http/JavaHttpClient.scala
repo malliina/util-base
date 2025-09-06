@@ -14,7 +14,6 @@ import java.net.http.HttpResponse._
 import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.concurrent.Executor
 
 object JavaHttpClient extends HttpHeaders {
   def requestFor(url: FullUrl, headers: Map[String, String]): HttpRequest =
@@ -125,21 +124,21 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     url: FullUrl,
     json: W,
     headers: Map[String, String] = Map.empty
-  ): F[T] = fetchJson[T](postJsonRequest(url, json, headers), url)
+  ): F[T] = fetchJson[T](postJsonRequest(url, json, defaultHeaders ++ headers), url)
 
   def postJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] =
-    fetchString(postJsonRequest[Json](url, json, headers))
+    fetchString(postJsonRequest[Json](url, json, defaultHeaders ++ headers))
 
   def putJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] =
-    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, headers))
+    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, defaultHeaders ++ headers))
 
   def putAs[W: Encoder, T: Decoder](
     url: FullUrl,
@@ -167,7 +166,13 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     file: Path,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] = fetchString(
-    bodyRequest(HttpMethod.Post, url, BodyPublishers.ofFile(file), mediaType, headers)
+    bodyRequest(
+      HttpMethod.Post,
+      url,
+      BodyPublishers.ofFile(file),
+      mediaType,
+      defaultHeaders ++ headers
+    )
   )
 
   def download(
@@ -181,8 +186,8 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
       }
       .recoverWith { case re: ResponseException =>
         re.error match {
-          case se: StatusError => Async[F].pure(Left(se))
-          case other           => Async[F].raiseError(re)
+          case se: StatusError => F.pure(Left(se))
+          case other           => F.raiseError(re)
         }
       }
 
@@ -200,10 +205,9 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
 
   def socket(
     url: FullUrl,
-    headers: Map[String, String],
-    executor: Executor
+    headers: Map[String, String]
   ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] =
-    WebSocket.build[F](url, headers, javaHttp, executor)
+    WebSocket.build[F](url, headers, javaHttp)
 
   private def fetchJson[T: Decoder](request: HttpRequest, url: FullUrl): F[T] =
     fetchFold(request, jsonBodyParser[T](url))
