@@ -1,21 +1,19 @@
 package com.malliina.http
 
-import cats.effect.Async
-import cats.syntax.all.{toFlatMapOps, toFunctorOps}
-import com.malliina.http.Ops.{BodyHandlerOps, CompletableFutureOps}
-import com.malliina.http.JavaHttpClient.{bodyRequest, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
+import cats.effect.{Async, Resource}
+import cats.syntax.all.{catsSyntaxApplicativeError, toFlatMapOps, toFunctorOps}
+import com.malliina.http.JavaHttpClient.{bodyParser, bodyRequest, jsonBodyParser, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
+import com.malliina.http.Ops.{BodyHandlerOps, CompletionStageOps}
 import com.malliina.storage.{StorageLong, StorageSize}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, parser}
-import jdk.internal.net.http.common.Utils.charsetFrom
-import cats.syntax.all.catsSyntaxApplicativeError
-import java.net.URLEncoder
+
+import java.net.{URI, URLEncoder}
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.HttpResponse._
 import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.concurrent.CompletableFuture
 
 object JavaHttpClient extends HttpHeaders {
   def requestFor(url: FullUrl, headers: Map[String, String]): HttpRequest =
@@ -65,44 +63,82 @@ object JavaHttpClient extends HttpHeaders {
     url: FullUrl,
     headers: Map[String, String],
     base: HttpRequest.Builder = HttpRequest.newBuilder()
-  ): HttpRequest.Builder =
+  ): HttpRequest.Builder = {
+    val default =
+      base.uri(URI.create(url.url)).header(HttpHeaders.`Accept-Encoding`, HttpHeaders.gzip)
     headers
-      .foldLeft(base) { case (b, (k, v)) =>
+      .foldLeft(default) { case (b, (k, v)) =>
         b.header(k, v)
       }
+  }
 
   private def jsonBodyPublisher[T: Encoder](t: T) = BodyPublishers.ofString(t.asJson.noSpaces)
 
+  def jsonBodyParser[T: Decoder](url: FullUrl): BodyHandler[Either[ResponseError, T]] =
+    bodyParser(url) { res =>
+      BodySubscribers.mapping(
+        BodySubscribers.ofByteArray(),
+        (bytes: Array[Byte]) => {
+          val javaEnc = res.headers().firstValue(HttpHeaders.`Content-Encoding`)
+          val enc = if (javaEnc.isPresent) Option(javaEnc.get()) else None
+          val decompressor = enc match {
+            case Some(HttpHeaders.gzip)    => Decompression.gzip
+            case Some(HttpHeaders.deflate) => Decompression.deflate
+            case _                         => Decompression.identity
+          }
+          parser
+            .decode(new String(decompressor.decompress(bytes), StandardCharsets.UTF_8))
+            .fold(err => Left(JsonError(err, new JavaResponseMeta(res), url)), t => Right(t))
+        }
+      )
+    }
+
+  private def bodyParser[T](url: FullUrl)(
+    successParser: BodyHandler[Either[ResponseError, T]]
+  ): BodyHandler[Either[ResponseError, T]] =
+    (res: ResponseInfo) => {
+      val meta = new JavaResponseMeta(res)
+      if (meta.isSuccess) {
+        successParser(res)
+      } else {
+        BodyHandlers
+          .ofString()
+          .map[Either[ResponseError, T]](str =>
+            Left(StatusError(new JavaBodyResponse(meta, str), url))
+          )(res)
+      }
+    }
 }
 
-class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
+class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[String, String])
+  extends HttpClient[F] {
   private val F = Async[F]
 
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
-    fetchJson[T](requestFor(url, headers), url)
+    fetchJson[T](requestFor(url, defaultHeaders ++ headers), url)
 
   def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[HttpResponse] =
-    fetchString(requestFor(url, headers))
+    fetchString(requestFor(url, defaultHeaders ++ headers))
 
   def postAs[W: Encoder, T: Decoder](
     url: FullUrl,
     json: W,
     headers: Map[String, String] = Map.empty
-  ): F[T] = fetchJson[T](postJsonRequest(url, json, headers), url)
+  ): F[T] = fetchJson[T](postJsonRequest(url, json, defaultHeaders ++ headers), url)
 
   def postJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] =
-    fetchString(postJsonRequest[Json](url, json, headers))
+    fetchString(postJsonRequest[Json](url, json, defaultHeaders ++ headers))
 
   def putJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] =
-    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, headers))
+    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, defaultHeaders ++ headers))
 
   def putAs[W: Encoder, T: Decoder](
     url: FullUrl,
@@ -130,7 +166,13 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
     file: Path,
     headers: Map[String, String] = Map.empty
   ): F[HttpResponse] = fetchString(
-    bodyRequest(HttpMethod.Post, url, BodyPublishers.ofFile(file), mediaType, headers)
+    bodyRequest(
+      HttpMethod.Post,
+      url,
+      BodyPublishers.ofFile(file),
+      mediaType,
+      defaultHeaders ++ headers
+    )
   )
 
   def download(
@@ -144,19 +186,28 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
       }
       .recoverWith { case re: ResponseException =>
         re.error match {
-          case se: StatusError => Async[F].pure(Left(se))
-          case other           => Async[F].raiseError(re)
+          case se: StatusError => F.pure(Left(se))
+          case other           => F.raiseError(re)
         }
       }
 
   def downloadFile(url: FullUrl, to: Path, headers: Map[String, String] = Map.empty): F[Path] =
     fetchFold(
-      requestFor(url, headers),
+      requestFor(url, defaultHeaders ++ headers),
       okBodyParser(url, BodyHandlers.ofFile(to))
     )
 
   def fetchBytes(url: FullUrl, headers: Map[String, String]): F[Array[Byte]] =
-    fetchFold(requestFor(url, headers), okBodyParser(url, BodyHandlers.ofByteArray()))
+    fetchFold(
+      requestFor(url, defaultHeaders ++ headers),
+      okBodyParser(url, BodyHandlers.ofByteArray())
+    )
+
+  def socket(
+    url: FullUrl,
+    headers: Map[String, String]
+  ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] =
+    WebSocket.build[F](url, headers, javaHttp)
 
   private def fetchJson[T: Decoder](request: HttpRequest, url: FullUrl): F[T] =
     fetchFold(request, jsonBodyParser[T](url))
@@ -177,49 +228,8 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient) extends HttpClient[F] {
   ): F[JHttpResponse[T]] =
     javaHttp.sendAsync(request, handler).effect[F]
 
-  private def jsonBodyParser[T: Decoder](
-    url: FullUrl
-  ): BodyHandler[Either[ResponseError, T]] =
-    bodyParser(url) { res =>
-      BodySubscribers.mapping(
-        BodySubscribers.ofString(charsetFrom(res.headers())),
-        (str: String) =>
-          parser
-            .decode(str)
-            .fold(err => Left(JsonError(err, new JavaResponseMeta(res), url)), t => Right(t))
-      )
-    }
-
   private def okBodyParser[T](url: FullUrl, parser: BodyHandler[T]) =
     bodyParser(url)(parser.map[Either[ResponseError, T]](t => Right(t)))
 
-  private def bodyParser[T](url: FullUrl)(
-    successParser: BodyHandler[Either[ResponseError, T]]
-  ): BodyHandler[Either[ResponseError, T]] =
-    (res: ResponseInfo) => {
-      val meta = new JavaResponseMeta(res)
-      if (meta.isSuccess) {
-        successParser(res)
-      } else {
-        BodyHandlers
-          .ofString()
-          .map[Either[ResponseError, T]](str =>
-            Left(StatusError(new JavaBodyResponse(meta, str), url))
-          )(res)
-      }
-    }
-
   private def fail[T](error: ResponseError): F[T] = F.raiseError(error.toException)
-}
-
-object Ops {
-  implicit class BodyHandlerOps[T](bh: BodyHandler[T]) {
-    def map[U](f: T => U): BodyHandler[U] = (res: ResponseInfo) =>
-      BodySubscribers.mapping(bh(res), t => f(t))
-  }
-  implicit class CompletableFutureOps[T](cf: CompletableFuture[T]) {
-    def effect[F[_]: Async]: F[T] = Async[F].async_ { cb =>
-      cf.whenComplete((r, t) => Option(t).fold(cb(Right(r)))(t => cb(Left(t))))
-    }
-  }
 }

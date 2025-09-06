@@ -1,4 +1,6 @@
+import sbt.ClassLoaderLayeringStrategy.Flat
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+
 import scala.sys.process.Process
 
 val versions = new {
@@ -10,8 +12,9 @@ val versions = new {
   val circe = "0.14.14"
   val config = "1.4.4"
   val fs2 = "3.11.0"
+  val logback = "1.5.18"
   val munit = "1.1.1"
-  val munitCats = "1.0.7"
+  val munitCats = "2.1.0"
   val okhttp = "4.12.0"
   val slf4j = "2.0.17"
 }
@@ -57,8 +60,12 @@ val httpClient = Project("http-client", file("http-client"))
   .dependsOn(primitivesJvm)
   .settings(
     libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % versions.slf4j,
+      "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
-      munit
+      munit,
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test,
+      "ch.qos.logback" % s"logback-classic" % versions.logback
     ),
     releaseProcess := tagReleaseProcess.value
   )
@@ -66,7 +73,7 @@ val httpClient = Project("http-client", file("http-client"))
 val okClient = project
   .in(file("okclient"))
   .enablePlugins(MavenCentralPlugin)
-  .dependsOn(primitivesJvm, httpClient)
+  .dependsOn(primitivesJvm, httpClient, httpClient % "test->test")
   .settings(
     libraryDependencies ++= Seq(
       "com.squareup.okhttp3" % "okhttp" % versions.okhttp,
@@ -77,12 +84,11 @@ val okClient = project
 
 val okClientIo = Project("okclient-io", file("okclient-io"))
   .enablePlugins(MavenCentralPlugin)
-  .dependsOn(okClient)
+  .dependsOn(okClient, okClient % "test->test")
   .settings(
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
-      "org.typelevel" %% "munit-cats-effect-3" % versions.munitCats % Test
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
     releaseProcess := tagReleaseProcess.value
   )

@@ -11,8 +11,8 @@ import okhttp3._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object OkClient {
-  val jsonMediaType: MediaType = MediaType.parse("application/json")
-  val plainText = MediaType.parse("text/plain")
+  val jsonMediaType: MediaType = MediaType.parse(HttpHeaders.application.json)
+  val plainText = MediaType.parse(HttpHeaders.text.plain)
 
   def default: OkClient = apply(okHttpClient)
 

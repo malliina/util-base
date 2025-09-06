@@ -11,11 +11,12 @@ object HttpClient {
   def javaResource[F[_]: Sync](
     builder: JHttpClient.Builder = JHttpClient.newBuilder()
   ): Resource[F, JHttpClient] =
-    Resource.make[F, JHttpClient](Sync[F].delay(builder.build()))(c => Sync[F].delay(c.close()))
+    Resource.make[F, JHttpClient](Sync[F].delay(builder.build()))(c => Sync[F].delay(()))
   def resource[F[_]: Async](
-    builder: JHttpClient.Builder = JHttpClient.newBuilder()
+    builder: JHttpClient.Builder = JHttpClient.newBuilder(),
+    defaultHeaders: Map[String, String] = Map.empty
   ): Resource[F, JavaHttpClient[F]] =
-    javaResource().map(javaClient => new JavaHttpClient(javaClient))
+    javaResource().map(javaClient => new JavaHttpClient(javaClient, defaultHeaders))
 }
 
 trait HttpClient[F[_]] {
