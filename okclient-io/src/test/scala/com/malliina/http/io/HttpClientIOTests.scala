@@ -1,10 +1,9 @@
 package com.malliina.http.io
 
 import cats.effect.{IO, SyncIO}
-import com.malliina.http.{FullUrl, OkHttpHttpClient, SocketEvent}
+import com.malliina.http.{FullUrl, SocketEvent}
 import com.malliina.values.Username
 import fs2.Stream
-import okhttp3.WebSocket
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64

@@ -1,4 +1,6 @@
+import sbt.ClassLoaderLayeringStrategy.Flat
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+
 import scala.sys.process.Process
 
 val versions = new {
@@ -11,7 +13,7 @@ val versions = new {
   val config = "1.4.4"
   val fs2 = "3.11.0"
   val munit = "1.1.1"
-  val munitCats = "1.0.7"
+  val munitCats = "2.1.0"
   val okhttp = "4.12.0"
   val slf4j = "2.0.17"
 }
@@ -60,9 +62,11 @@ val httpClient = Project("http-client", file("http-client"))
       "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
-      munit
+      munit,
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
-    releaseProcess := tagReleaseProcess.value
+    releaseProcess := tagReleaseProcess.value,
+    Test / classLoaderLayeringStrategy := Flat
   )
 
 val okClient = project
@@ -83,7 +87,7 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
   .settings(
     libraryDependencies ++= Seq(
       "co.fs2" %% "fs2-core" % versions.fs2,
-      "org.typelevel" %% "munit-cats-effect-3" % versions.munitCats % Test
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
     releaseProcess := tagReleaseProcess.value
   )
