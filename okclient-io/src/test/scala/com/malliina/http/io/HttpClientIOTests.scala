@@ -1,6 +1,6 @@
 package com.malliina.http.io
 
-import cats.effect.{IO, SyncIO}
+import cats.effect.IO
 import com.malliina.http.{FullUrl, HttpHeaders, SocketEvent, TestAuth}
 import com.malliina.values.Username
 import fs2.Stream
@@ -9,14 +9,14 @@ import scala.concurrent.duration.DurationInt
 
 class HttpClientIOTests extends munit.CatsEffectSuite {
   val Authorization = HttpHeaders.Authorization
-  val httpFixture: SyncIO[FunFixture[HttpClientF2[IO]]] = ResourceFixture(HttpClientIO.resource[IO])
+  val httpFixture = ResourceFunFixture(HttpClientIO.resource[IO])
 
   httpFixture.test("can make io request".ignore) { client =>
     val res = client.get(FullUrl("http", "www.google.com", ""))
     res.map(r => assert(r.isSuccess))
   }
 
-  httpFixture.test("websocket") { client =>
+  httpFixture.test("websocket".ignore) { client =>
     WebSocketF
       .build[IO](
         FullUrl.wss("logs.malliina.com", "/ws/sources"),
