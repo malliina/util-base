@@ -1,4 +1,3 @@
-import sbt.ClassLoaderLayeringStrategy.Flat
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 import scala.sys.process.Process
