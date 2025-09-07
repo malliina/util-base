@@ -22,7 +22,7 @@ object WebSocketF {
     for {
       d <- Dispatcher.parallel[F]
       builder = new OkSocketBuilder(url, headers, client, d)
-      s <- Resource.eval(ReconnectingSocket.build(builder))
+      s <- ReconnectingSocket.resource(builder)
     } yield s
 
   class OkSocketBuilder[F[_]: Async](

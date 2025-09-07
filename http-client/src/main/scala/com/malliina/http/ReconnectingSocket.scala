@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import cats.effect.{Async, Ref, Sync}
+import cats.effect.{Async, Ref, Resource, Sync}
 import cats.syntax.all.{catsSyntaxFlatMapOps, toFlatMapOps, toFunctorOps}
 import com.malliina.http.ReconnectingSocket.log
 import com.malliina.http.SocketEvent.{Closed, Failure, Idle, TextMessage}
@@ -15,12 +15,16 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 object ReconnectingSocket {
   private val log = AppLogger(getClass)
 
-  def build[F[_]: Async, S <: WebSocketOps[F]](builder: SocketBuilder[F, S]) =
-    for {
+  def resource[F[_]: Async, S <: WebSocketOps[F]](
+    builder: SocketBuilder[F, S]
+  ): Resource[F, ReconnectingSocket[F, S]] = {
+    val make = for {
       topic <- Topic[F, SocketEvent]
       ref <- Ref.of[F, Option[S]](None)
       interrupter <- SignallingRef[F, Boolean](false)
     } yield new ReconnectingSocket[F, S](topic, ref, interrupter, builder)
+    Resource.make(make)(_.close)
+  }
 }
 
 class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](

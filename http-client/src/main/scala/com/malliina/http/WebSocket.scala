@@ -23,7 +23,7 @@ object WebSocket {
     for {
       d <- Dispatcher.parallel[F]
       builder = new JavaSocketBuilder(url, headers, http, d)
-      s <- Resource.eval(ReconnectingSocket.build(builder))
+      s <- ReconnectingSocket.resource(builder)
     } yield s
   }
 
