@@ -29,7 +29,7 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
   interrupter: SignallingRef[F, Boolean],
   builder: SocketBuilder[F, S],
   backoffTime: FiniteDuration = 10.seconds
-) {
+) extends WebSocketOps[F] {
   val F = Sync[F]
   def url = builder.url
   private val interrupted = new AtomicBoolean(false)
@@ -106,10 +106,12 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
       )
   }
 
-  def sendMessage(s: String): F[Boolean] =
+  override def sendMessage(s: String): F[Boolean] =
     active.get.flatMap { opt =>
       opt.map(a => a.sendMessage(s).as(true)).getOrElse(F.pure(false))
     }
+
+  override def closeNow: F[Unit] = close
 
   def close: F[Unit] =
     delay(log.info(s"Closing socket to '$url'...")) >>
