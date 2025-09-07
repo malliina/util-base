@@ -4,10 +4,10 @@ import cats.effect.Sync
 import cats.effect.std.Dispatcher
 import com.malliina.http.SocketEvent.{BytesMessage, Closed, Closing, Failure, Open, TextMessage}
 import com.malliina.http.io.OkListener.log
-import com.malliina.http.{FullUrl, SocketBuilder, SocketEvent}
+import com.malliina.http.{FullUrl, SocketEvent}
 import com.malliina.util.AppLogger
-import fs2.concurrent.{SignallingRef, Topic}
-import okhttp3.{Request, Response, WebSocket, WebSocketListener}
+import fs2.concurrent.Topic
+import okhttp3.{Response, WebSocket, WebSocketListener}
 import okio.ByteString
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -33,10 +33,10 @@ class OkListener[F[_]: Sync](
     }
     Future(d.unsafeToFuture(topic.publish1(e))).flatten.onComplete {
       case util.Failure(exception) =>
-        writeLog(s"Failed to publish message to '$url'.", exception)
+        writeLog(s"Failed to publish message $e to '$url'.", exception)
       case util.Success(value) =>
         value match {
-          case Left(value)  => log.warn(s"Failed to publish message to '$url', topic closed.")
+          case Left(value)  => log.warn(s"Failed to publish message $e to '$url', topic closed.")
           case Right(value) => ()
         }
     }
@@ -44,7 +44,7 @@ class OkListener[F[_]: Sync](
 
   val listener: WebSocketListener = new WebSocketListener {
     override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit = {
-      log.info(s"Closed  socket to '$url'.")
+      log.info(s"Closed socket to '$url'.")
       publish(Closed(url, code, reason))
     }
 
