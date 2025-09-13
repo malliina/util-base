@@ -5,8 +5,8 @@ import cats.effect.implicits.monadCancelOps_
 import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
-import com.malliina.http.{FullUrl, HttpResponse, OkClient, OkHttpBackend, OkHttpHttpClient, OkHttpResponse, ReconnectingSocket}
-import okhttp3._
+import com.malliina.http.{FullUrl, HttpClient, HttpResponse, OkClient, OkHttpBackend, OkHttpHttpClient, OkHttpResponse, ReconnectingSocket}
+import okhttp3.*
 
 import java.io.IOException
 
@@ -47,14 +47,16 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
     raw(request).bracket(consume)(r => Sync[F].delay(r.close()))
   override def raw(request: Request): F[Response] =
     client.newCall(request).io
-  def socket(
+  override def socket(
     url: FullUrl,
     headers: Map[String, String]
   ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] = WebSocketF.build(url, headers, client)
 }
 
 abstract class HttpClientF[F[_]: Sync]()(implicit F: MonadError[F, Throwable])
-  extends OkHttpHttpClient[F] {
+  extends HttpClient[F]
+  with OkHttpHttpClient[F] {
+  type Socket = OkSocket[F]
   override def execute(request: Request): F[HttpResponse] =
     F.map(raw(request))(OkHttpResponse.apply)
   override def flatMap[T, U](t: F[T])(f: T => F[U]): F[U] = F.flatMap(t)(f)

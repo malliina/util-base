@@ -112,6 +112,8 @@ object JavaHttpClient extends HttpHeaders {
 
 class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[String, String])
   extends HttpClient[F] {
+  type Socket = JavaSocket[F]
+
   private val F = Async[F]
 
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
@@ -203,7 +205,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
       okBodyParser(url, BodyHandlers.ofByteArray())
     )
 
-  def socket(
+  override def socket(
     url: FullUrl,
     headers: Map[String, String]
   ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] =

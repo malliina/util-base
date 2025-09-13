@@ -19,7 +19,7 @@ object OkHttpHttpClient {
     }
 }
 
-trait OkHttpHttpClient[F[_]] extends HttpClient[F] with Closeable {
+trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   implicit class FOps[T](f: F[T]) {
     def flatMap[U](code: T => F[U]): F[U] = OkHttpHttpClient.this.flatMap(f)(code)
   }
