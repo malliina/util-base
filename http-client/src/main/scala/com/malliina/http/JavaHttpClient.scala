@@ -113,7 +113,7 @@ object JavaHttpClient extends HttpHeaders {
 class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[String, String])
   extends HttpClient[F] {
   type Socket = JavaSocket[F]
-
+  type Body = BodyPublisher
   private val F = Async[F]
 
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
@@ -128,12 +128,53 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     headers: Map[String, String] = Map.empty
   ): F[T] = fetchJson[T](postJsonRequest(url, json, defaultHeaders ++ headers), url)
 
-  def postJson(
+  def bodies[T](
     url: FullUrl,
-    json: Json,
-    headers: Map[String, String] = Map.empty
+    body: T,
+    headers: Map[String, String]
+  )(implicit bb: BodyBuilder[T, Body]): F[HttpResponse] = {
+    val req = bodyRequest(
+      HttpMethod.Post,
+      url,
+      bb.build(body),
+      bb.contentType,
+      defaultHeaders ++ headers
+    )
+    fetchString(req)
+  }
+
+  def bytes(
+    method: HttpMethod with BodyMethod,
+    url: FullUrl,
+    body: Array[Byte],
+    mediaType: String,
+    headers: Map[String, String]
   ): F[HttpResponse] =
-    fetchString(postJsonRequest[Json](url, json, defaultHeaders ++ headers))
+    fetchString(
+      bodyRequest(
+        method,
+        url,
+        BodyPublishers.ofByteArray(body),
+        mediaType,
+        defaultHeaders ++ defaultHeaders
+      )
+    )
+
+  override def postString(
+    url: FullUrl,
+    string: String,
+    mediaType: String,
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    fetchString(
+      bodyRequest(
+        HttpMethod.Post,
+        url,
+        BodyPublishers.ofString(string),
+        mediaType,
+        defaultHeaders ++ headers
+      )
+    )
 
   def putJson(
     url: FullUrl,

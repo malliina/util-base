@@ -60,12 +60,13 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   ): F[T] =
     postForm(url, form, headers).flatMap(r => parse[T](r, url))
 
-  def postJson(
+  override def postString(
     url: FullUrl,
-    json: Json,
-    headers: Map[String, String] = Map.empty
+    string: String,
+    mediaType: String,
+    headers: Map[String, String]
   ): F[HttpResponse] =
-    post(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
+    post(url, RequestBody.create(string, MediaType.parse(mediaType)), headers)
 
   def putJson(
     url: FullUrl,

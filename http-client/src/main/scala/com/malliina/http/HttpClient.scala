@@ -46,11 +46,18 @@ trait SimpleHttpClient[F[_]] {
     headers: Map[String, String] = Map.empty
   ): F[T]
 
+  def postString(
+    url: FullUrl,
+    string: String,
+    mediaType: String,
+    headers: Map[String, String] = Map.empty
+  ): F[HttpResponse]
+
   def postJson(
     url: FullUrl,
     json: Json,
     headers: Map[String, String] = Map.empty
-  ): F[HttpResponse]
+  ): F[HttpResponse] = postString(url, json.noSpaces, HttpHeaders.application.json, headers)
 
   def putJson(
     url: FullUrl,
