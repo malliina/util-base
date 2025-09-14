@@ -38,6 +38,9 @@ trait SimpleHttpClient[F[_]] {
 
   def putAs[W: Encoder, T: Decoder](url: FullUrl, json: W, headers: Map[String, String]): F[T]
 
+  def postFormAs[T: Decoder](url: FullUrl, form: Map[String, String]): F[T] =
+    postFormAs[T](url, form, Map.empty[String, String])
+
   def postFormAs[T: Decoder](
     url: FullUrl,
     form: Map[String, String],
@@ -68,6 +71,9 @@ trait SimpleHttpClient[F[_]] {
 
   def putJson(url: FullUrl, json: Json, headers: Map[String, String]): F[HttpResponse]
 
+  def postFile(url: FullUrl, mediaType: String, file: Path): F[HttpResponse] =
+    postFile(url, mediaType, file, Map.empty)
+
   def postFile(
     url: FullUrl,
     mediaType: String,
@@ -75,11 +81,17 @@ trait SimpleHttpClient[F[_]] {
     headers: Map[String, String]
   ): F[HttpResponse]
 
+  def postForm(url: FullUrl, form: Map[String, String]): F[HttpResponse] =
+    postForm(url, form, Map.empty)
+
   def postForm(
     url: FullUrl,
     form: Map[String, String],
     headers: Map[String, String]
   ): F[HttpResponse]
+
+  def postBytes(url: FullUrl, bytes: Array[Byte]): F[HttpResponse] =
+    postBytes(url, bytes, Map.empty)
 
   def postBytes(url: FullUrl, bytes: Array[Byte], headers: Map[String, String]): F[HttpResponse]
 
