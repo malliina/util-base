@@ -212,7 +212,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     )
 
   private def postPut(
-    method: HttpMethod & BodyMethod,
+    method: HttpMethod with BodyMethod,
     url: FullUrl,
     publisher: BodyPublisher,
     mediaType: String,
