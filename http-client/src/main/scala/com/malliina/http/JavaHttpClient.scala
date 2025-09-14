@@ -116,16 +116,16 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
   type Body = BodyPublisher
   private val F = Async[F]
 
-  def getAs[T: Decoder](url: FullUrl, headers: Map[String, String] = Map.empty): F[T] =
+  override def getAs[T: Decoder](url: FullUrl, headers: Map[String, String]): F[T] =
     fetchJson[T](requestFor(url, defaultHeaders ++ headers), url)
 
-  def get(url: FullUrl, headers: Map[String, String] = Map.empty): F[HttpResponse] =
+  override def get(url: FullUrl, headers: Map[String, String]): F[HttpResponse] =
     fetchString(requestFor(url, defaultHeaders ++ headers))
 
-  def postAs[W: Encoder, T: Decoder](
+  override def postAs[W: Encoder, T: Decoder](
     url: FullUrl,
     json: W,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[T] = fetchJson[T](postJsonRequest(url, json, defaultHeaders ++ headers), url)
 
   def bodies[T](
@@ -143,10 +143,78 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     fetchString(req)
   }
 
-  def bytes(
-    method: HttpMethod with BodyMethod,
+  override def postString(
     url: FullUrl,
-    body: Array[Byte],
+    string: String,
+    mediaType: String,
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    postPut(
+      HttpMethod.Post,
+      url,
+      BodyPublishers.ofString(string),
+      mediaType,
+      defaultHeaders ++ headers
+    )
+
+  override def putJson(
+    url: FullUrl,
+    json: Json,
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, defaultHeaders ++ headers))
+
+  override def putAs[W: Encoder, T: Decoder](
+    url: FullUrl,
+    json: W,
+    headers: Map[String, String]
+  ): F[T] = fetchJson[T](jsonBodyRequest(HttpMethod.Put, url, json, defaultHeaders ++ headers), url)
+
+  override def postFormAs[T: Decoder](
+    url: FullUrl,
+    form: Map[String, String],
+    headers: Map[String, String]
+  ): F[T] =
+    fetchJson[T](postFormRequest(url, form, defaultHeaders ++ headers), url)
+
+  override def postForm(
+    url: FullUrl,
+    form: Map[String, String],
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    fetchString(postFormRequest(url, form, defaultHeaders ++ headers))
+
+  override def postFile(
+    url: FullUrl,
+    mediaType: String,
+    file: Path,
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    postPut(
+      HttpMethod.Post,
+      url,
+      BodyPublishers.ofFile(file),
+      HttpHeaders.application.octetStream,
+      headers
+    )
+
+  override def postBytes(
+    url: FullUrl,
+    bytes: Array[Byte],
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    postPut(
+      HttpMethod.Post,
+      url,
+      BodyPublishers.ofByteArray(bytes),
+      HttpHeaders.application.octetStream,
+      headers
+    )
+
+  private def postPut(
+    method: HttpMethod & BodyMethod,
+    url: FullUrl,
+    publisher: BodyPublisher,
     mediaType: String,
     headers: Map[String, String]
   ): F[HttpResponse] =
@@ -154,74 +222,16 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
       bodyRequest(
         method,
         url,
-        BodyPublishers.ofByteArray(body),
-        mediaType,
-        defaultHeaders ++ defaultHeaders
-      )
-    )
-
-  override def postString(
-    url: FullUrl,
-    string: String,
-    mediaType: String,
-    headers: Map[String, String]
-  ): F[HttpResponse] =
-    fetchString(
-      bodyRequest(
-        HttpMethod.Post,
-        url,
-        BodyPublishers.ofString(string),
+        publisher,
         mediaType,
         defaultHeaders ++ headers
       )
     )
 
-  def putJson(
-    url: FullUrl,
-    json: Json,
-    headers: Map[String, String] = Map.empty
-  ): F[HttpResponse] =
-    fetchString(jsonBodyRequest[Json](HttpMethod.Put, url, json, defaultHeaders ++ headers))
-
-  def putAs[W: Encoder, T: Decoder](
-    url: FullUrl,
-    json: W,
-    headers: Map[String, String] = Map.empty
-  ): F[T] = fetchJson[T](jsonBodyRequest(HttpMethod.Put, url, json, headers), url)
-
-  def postFormAs[T: Decoder](
-    url: FullUrl,
-    form: Map[String, String],
-    headers: Map[String, String] = Map.empty
-  ): F[T] =
-    fetchJson[T](postFormRequest(url, form, headers), url)
-
-  def postForm(
-    url: FullUrl,
-    form: Map[String, String],
-    headers: Map[String, String] = Map.empty
-  ): F[HttpResponse] =
-    fetchString(postFormRequest(url, form, headers))
-
-  def postFile(
-    url: FullUrl,
-    mediaType: String,
-    file: Path,
-    headers: Map[String, String] = Map.empty
-  ): F[HttpResponse] = fetchString(
-    bodyRequest(
-      HttpMethod.Post,
-      url,
-      BodyPublishers.ofFile(file),
-      mediaType,
-      defaultHeaders ++ headers
-    )
-  )
-
-  def download(
+  override def download(
     url: FullUrl,
     to: Path,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[Either[StatusError, StorageSize]] =
     downloadFile(url, to, headers)
       .map[Either[StatusError, StorageSize]] { path =>
@@ -234,7 +244,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
         }
       }
 
-  def downloadFile(url: FullUrl, to: Path, headers: Map[String, String] = Map.empty): F[Path] =
+  def downloadFile(url: FullUrl, to: Path, headers: Map[String, String]): F[Path] =
     fetchFold(
       requestFor(url, defaultHeaders ++ headers),
       okBodyParser(url, BodyHandlers.ofFile(to))

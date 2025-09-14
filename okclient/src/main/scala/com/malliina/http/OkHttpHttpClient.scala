@@ -35,28 +35,28 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   def postAs[W: Encoder, T: Decoder](
     url: FullUrl,
     json: W,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[T] =
     postJson(url, json.asJson, headers).flatMap(r => parse[T](r, url))
 
   def putAs[W: Encoder, T: Decoder](
     url: FullUrl,
     json: W,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[T] =
     putJson(url, json.asJson, headers).flatMap(r => parse[T](r, url))
 
   def postJsonAs[T: Decoder](
     url: FullUrl,
     json: Json,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[T] =
     postJson(url, json, headers).flatMap(r => parse[T](r, url))
 
   def postFormAs[T: Decoder](
     url: FullUrl,
     form: Map[String, String],
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[T] =
     postForm(url, form, headers).flatMap(r => parse[T](r, url))
 
@@ -71,7 +71,7 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   def putJson(
     url: FullUrl,
     json: Json,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[HttpResponse] =
     put(url, RequestBody.create(json.asJson.toString, OkClient.jsonMediaType), headers)
 
@@ -79,7 +79,7 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
     url: FullUrl,
     mediaType: String,
     file: Path,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[HttpResponse] =
     postFile(url, MediaType.parse(mediaType), file, headers)
 
@@ -94,7 +94,7 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   def postForm(
     url: FullUrl,
     form: Map[String, String],
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[HttpResponse] = {
     val bodyBuilder = new FormBody.Builder(StandardCharsets.UTF_8)
     form foreach { case (k, v) =>
@@ -146,6 +146,13 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
     execute(builder.build())
   }
 
+  override def postBytes(
+    url: FullUrl,
+    bytes: Array[Byte],
+    headers: Map[String, String]
+  ): F[HttpResponse] =
+    postPut(url, headers, _.post(RequestBody.create(bytes)))
+
   /** Downloads `url` to `to`, returning the number of bytes written to `to`.
     *
     * @param url
@@ -160,7 +167,7 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   def download(
     url: FullUrl,
     to: Path,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[Either[StatusError, StorageSize]] =
     streamed(requestFor(url, headers).get().build()) { response =>
       success {
@@ -175,7 +182,7 @@ trait OkHttpHttpClient[F[_]] extends SimpleHttpClient[F] with Closeable {
   def downloadFile(
     url: FullUrl,
     to: Path,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String]
   ): F[Path] =
     streamed(requestFor(url, headers).get().build()) { response =>
       if (response.isSuccessful) {
