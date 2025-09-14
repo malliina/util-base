@@ -9,14 +9,14 @@ import java.nio.file.Path
 
 object HttpClient {
   def javaResource[F[_]: Sync](
-    builder: JHttpClient.Builder = JHttpClient.newBuilder()
+    builder: JHttpClient.Builder
   ): Resource[F, JHttpClient] =
     Resource.make[F, JHttpClient](Sync[F].delay(builder.build()))(c => Sync[F].delay(()))
   def resource[F[_]: Async](
     builder: JHttpClient.Builder = JHttpClient.newBuilder(),
     defaultHeaders: Map[String, String] = Map.empty
   ): Resource[F, JavaHttpClient[F]] =
-    javaResource().map(javaClient => new JavaHttpClient(javaClient, defaultHeaders))
+    javaResource(builder).map(javaClient => new JavaHttpClient(javaClient, defaultHeaders))
 }
 
 trait SimpleHttpClient[F[_]] {
