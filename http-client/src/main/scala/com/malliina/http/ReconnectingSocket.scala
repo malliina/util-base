@@ -89,10 +89,11 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
     .flatMap { receiver =>
       val consume = Stream
         .retry(
-          for {
-            socket <- connectSocket
-            _ <- eventsOrFailure.evalMap(ev => receiver.publish1(ev)).compile.drain
-          } yield socket,
+          eventsOrFailure
+            .evalMap(ev => receiver.publish1(ev))
+            .concurrently(Stream.eval(connectSocket))
+            .compile
+            .drain,
           backoffTime,
           delay => delay * 2,
           maxAttempts = 100000

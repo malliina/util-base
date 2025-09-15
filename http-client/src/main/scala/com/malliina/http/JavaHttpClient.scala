@@ -2,7 +2,7 @@ package com.malliina.http
 
 import cats.effect.{Async, Resource}
 import cats.syntax.all.{catsSyntaxApplicativeError, toFlatMapOps, toFunctorOps}
-import com.malliina.http.JavaHttpClient.{bodyParser, bodyRequest, jsonBodyParser, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor}
+import com.malliina.http.JavaHttpClient.{bodyParser, bodyRequest, bytesHandler, jsonBodyParser, jsonBodyRequest, postFormRequest, postJsonRequest, requestFor, stringHandler}
 import com.malliina.http.Ops.{BodyHandlerOps, CompletionStageOps}
 import com.malliina.storage.{StorageLong, StorageSize}
 import io.circe.syntax.EncoderOps
@@ -76,21 +76,12 @@ object JavaHttpClient extends HttpHeaders {
 
   def jsonBodyParser[T: Decoder](url: FullUrl): BodyHandler[Either[ResponseError, T]] =
     bodyParser(url) { res =>
-      BodySubscribers.mapping(
-        BodySubscribers.ofByteArray(),
-        (bytes: Array[Byte]) => {
-          val javaEnc = res.headers().firstValue(HttpHeaders.`Content-Encoding`)
-          val enc = if (javaEnc.isPresent) Option(javaEnc.get()) else None
-          val decompressor = enc match {
-            case Some(HttpHeaders.gzip)    => Decompression.gzip
-            case Some(HttpHeaders.deflate) => Decompression.deflate
-            case _                         => Decompression.identity
-          }
-          parser
-            .decode(new String(decompressor.decompress(bytes), StandardCharsets.UTF_8))
-            .fold(err => Left(JsonError(err, new JavaResponseMeta(res), url)), t => Right(t))
-        }
-      )
+      val parsingHandler = stringHandler().map[Either[ResponseError, T]] { string =>
+        parser
+          .decode[T](string)
+          .fold(err => Left(JsonError(err, new JavaResponseMeta(res), url)), t => Right(t))
+      }
+      parsingHandler(res)
     }
 
   private def bodyParser[T](url: FullUrl)(
@@ -101,13 +92,34 @@ object JavaHttpClient extends HttpHeaders {
       if (meta.isSuccess) {
         successParser(res)
       } else {
-        BodyHandlers
-          .ofString()
-          .map[Either[ResponseError, T]](str =>
-            Left(StatusError(new JavaBodyResponse(meta, str), url))
-          )(res)
+        val errorHandler = bytesHandler().map[Either[ResponseError, T]] { bytes =>
+          val str = new String(bytes, StandardCharsets.UTF_8)
+          Left(StatusError(new JavaBodyResponse(meta, str), url))
+        }
+        errorHandler(res)
       }
     }
+
+  private def stringHandler(): BodyHandler[String] =
+    bytesHandler().map { bytes =>
+      new String(bytes, StandardCharsets.UTF_8)
+    }
+
+  private def bytesHandler(): BodyHandler[Array[Byte]] =
+    (res: ResponseInfo) =>
+      BodySubscribers.mapping(
+        BodySubscribers.ofByteArray(),
+        (bytes: Array[Byte]) => {
+          val javaEnc = res.headers().firstValue(HttpHeaders.`Content-Encoding`)
+          val enc = if (javaEnc.isPresent) Option(javaEnc.get()) else None
+          val decompressor = enc match {
+            case Some(HttpHeaders.gzip)    => Decompression.gzip
+            case Some(HttpHeaders.deflate) => Decompression.deflate
+            case _                         => Decompression.identity
+          }
+          decompressor.decompress(bytes)
+        }
+      )
 }
 
 class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[String, String])
@@ -253,7 +265,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
   def fetchBytes(url: FullUrl, headers: Map[String, String]): F[Array[Byte]] =
     fetchFold(
       requestFor(url, defaultHeaders ++ headers),
-      okBodyParser(url, BodyHandlers.ofByteArray())
+      okBodyParser(url, bytesHandler())
     )
 
   override def socket(
@@ -266,7 +278,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     fetchFold(request, jsonBodyParser[T](url))
 
   private def fetchString(request: HttpRequest): F[HttpResponse] =
-    fetch(request, BodyHandlers.ofString()).map(res => new StringResponse(res))
+    fetch(request, stringHandler()).map(res => new StringResponse(res))
 
   private def fetchFold[T](
     request: HttpRequest,
