@@ -8,13 +8,20 @@ val versions = new {
   val scala3 = "3.3.1"
 
   val catsEffect = "3.5.4"
+  val ci = "1.5.0"
   val circe = "0.14.14"
+  val commonsCodec = "1.19.0"
   val config = "1.4.4"
+  val doobie = "1.0.0-RC10"
+  val flywayMysql = "11.12.0"
   val fs2 = "3.11.0"
+  val http4s = "0.23.30"
   val logback = "1.5.18"
-  val munit = "1.1.1"
+  val munit = "1.2.0"
   val munitCats = "2.1.0"
+  val nimbusJwt = "10.5"
   val okhttp = "4.12.0"
+  val scalatags = "0.13.1"
   val slf4j = "2.0.17"
 }
 
@@ -26,7 +33,6 @@ inThisBuild(
   Seq(
     releaseCrossBuild := true,
     scalaVersion := versions.scala3,
-    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil,
     gitUserName := "malliina",
     organization := "com.malliina",
     developerName := "Michael Skogberg"
@@ -35,7 +41,8 @@ inThisBuild(
 
 val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % versions.circe) ++ Seq(munit)
+    .map(m => "io.circe" %% s"circe-$m" % versions.circe) ++ Seq(munit),
+  crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
 )
 val primitives = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
@@ -66,7 +73,8 @@ val httpClient = Project("http-client", file("http-client"))
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test,
       "ch.qos.logback" % s"logback-classic" % versions.logback
     ),
-    releaseProcess := tagReleaseProcess.value
+    releaseProcess := tagReleaseProcess.value,
+    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
   )
 
 val okClient = project
@@ -78,7 +86,8 @@ val okClient = project
       "com.squareup.okhttp3" % "okhttp" % versions.okhttp,
       munit
     ),
-    releaseProcess := tagReleaseProcess.value
+    releaseProcess := tagReleaseProcess.value,
+    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
   )
 
 val okClientIo = Project("okclient-io", file("okclient-io"))
@@ -89,7 +98,8 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
-    releaseProcess := tagReleaseProcess.value
+    releaseProcess := tagReleaseProcess.value,
+    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
   )
 
 val config = project
@@ -97,7 +107,72 @@ val config = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    libraryDependencies ++= Seq("com.typesafe" % "config" % versions.config) ++ Seq(munit)
+    libraryDependencies ++= Seq("com.typesafe" % "config" % versions.config) ++ Seq(munit),
+    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+  )
+
+val webAuth = Project("web-auth", file("web-auth"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(primitivesJvm, okClientIo)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    libraryDependencies ++= Seq(
+      "com.nimbusds" % "nimbus-jose-jwt" % versions.nimbusJwt,
+      "commons-codec" % "commons-codec" % versions.commonsCodec,
+      "org.scalameta" %% "munit" % versions.munit % Test
+    ),
+    releaseProcess := tagReleaseProcess.value
+  )
+
+val html = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full)
+  .in(file("util-html"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(primitives)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    name := "util-html",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "case-insensitive" % versions.ci,
+      "com.lihaoyi" %%% "scalatags" % versions.scalatags,
+      "org.scalameta" %%% "munit" % versions.munit % Test
+    ),
+    releaseProcess := tagReleaseProcess.value
+  )
+
+val htmlJvm = html.jvm
+val htmlJs = html.js
+
+val database = project
+  .in(file("database"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(config, okClientIo)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    libraryDependencies ++=
+      Seq("core", "hikari").map { m =>
+        "org.tpolecat" %% s"doobie-$m" % versions.doobie
+      } ++ Seq(
+        "org.flywaydb" % "flyway-mysql" % versions.flywayMysql,
+        "org.scalameta" %% "munit" % versions.munit % Test
+      ),
+    releaseProcess := tagReleaseProcess.value
+  )
+
+val http4s = project
+  .in(file("http4s"))
+  .dependsOn(htmlJvm)
+  .enablePlugins(MavenCentralPlugin)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    name := "util-http4s",
+    libraryDependencies ++=
+      Seq("ember-server", "circe", "dsl").map { m =>
+        "org.http4s" %% s"http4s-$m" % versions.http4s
+      } ++ Seq(
+        "org.scalameta" %% "munit" % versions.munit % Test
+      ),
+    releaseProcess := tagReleaseProcess.value
   )
 
 val docs = project
@@ -122,8 +197,22 @@ val docs = project
 
 val utilBaseRoot = project
   .in(file("."))
-  .aggregate(utilBase, primitivesJvm, primitivesJs, httpClient, okClient, okClientIo, config)
+  .aggregate(
+    utilBase,
+    primitivesJvm,
+    primitivesJs,
+    httpClient,
+    okClient,
+    okClientIo,
+    config,
+    webAuth,
+    htmlJvm,
+    htmlJs,
+    database,
+    http4s
+  )
   .settings(
+    crossScalaVersions := Nil,
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))),
     publish / skip := true,
     publishArtifact := false,
