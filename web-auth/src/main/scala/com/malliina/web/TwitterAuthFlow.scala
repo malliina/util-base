@@ -60,12 +60,11 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
     F.pure(Start(redirectUrl, extraParams, None))
 
   def requestToken(redirectUrl: FullUrl): F[Either[OAuthError, AccessToken]] =
-    fetchRequestToken(redirectUrl).map { optTokens =>
+    fetchRequestToken(redirectUrl).map: optTokens =>
       optTokens
         .filter(_.oauthCallbackConfirmed)
         .map(tokens => tokens.oauthToken)
         .toRight(OAuthError("Callback not confirmed."))
-    }
 
   def validateTwitterCallback(
     oauthToken: AccessToken,
@@ -132,9 +131,15 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
       "oauth_timestamp" -> s"${Instant.now().getEpochSecond}",
       "oauth_version" -> "1.0"
     )
-    private val encoded = params.map { case (k, v) => (percentEncode(k), percentEncode(v)) }
+    private val encoded = params.map:
+      case (k, v) => (percentEncode(k), percentEncode(v))
     val encodedParams = SortedMap(encoded.toSeq*)
-    val paramsString = percentEncode(encodedParams.map { case (k, v) => s"$k=$v" }.mkString("&"))
+    val paramsString = percentEncode(
+      encodedParams
+        .map:
+          case (k, v) => s"$k=$v"
+        .mkString("&")
+    )
 
     def signed(method: String, url: FullUrl, oauthTokenSecret: Option[String]): String =
       val signatureBaseString = s"$method&${percentEncode(url.url)}&$paramsString"

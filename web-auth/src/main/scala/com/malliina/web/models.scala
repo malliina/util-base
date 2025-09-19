@@ -206,13 +206,12 @@ object TwitterTokens:
   def parseMap(in: String) = in
     .split("&")
     .toList
-    .flatMap { kv =>
+    .flatMap: kv =>
       val parts = kv.split("=")
       if parts.length == 2 then
         val Array(k, v) = parts
         Option(k -> v)
       else None
-    }
     .toMap
 
 case class TwitterAccess(oauthToken: AccessToken, oauthTokenSecret: String)

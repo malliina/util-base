@@ -25,9 +25,9 @@ class FacebookAuthFlow[F[_]: Sync](authConf: AuthConf, http: HttpClient[F])
     redirectUrl: FullUrl,
     requestNonce: Option[String]
   ): F[Either[AuthError, Email]] =
-    val params = validationParams(code, redirectUrl, authConf).map { case (k, v) =>
-      k -> urlEncode(v)
-    }
+    val params = validationParams(code, redirectUrl, authConf).map:
+      case (k, v) =>
+        k -> urlEncode(v)
     val url = conf.tokenEndpoint.append(s"?${stringify(params)}")
 
     // https://developers.facebook.com/docs/graph-api/explorer/

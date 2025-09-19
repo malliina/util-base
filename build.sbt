@@ -111,6 +111,35 @@ val config = project
     crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
   )
 
+val fs2 = project
+  .in(file("fs2"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(primitivesJvm)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    libraryDependencies ++= Seq(
+      "ch.qos.logback" % "logback-classic" % versions.logback,
+      "co.fs2" %% "fs2-core" % versions.fs2,
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
+    ),
+    moduleName := "logback-fs2",
+    releaseProcess := tagReleaseProcess.value,
+    scalaVersion := versions.scala3
+  )
+
+val logstreams = project
+  .in(file("logstreams-client"))
+  .enablePlugins(MavenCentralPlugin)
+  .dependsOn(fs2, okClientIo)
+  .settings(
+    crossScalaVersions := Seq(versions.scala3),
+    moduleName := "logstreams-client",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
+    ),
+    releaseProcess := tagReleaseProcess.value
+  )
+
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm, okClientIo)
@@ -205,6 +234,8 @@ val utilBaseRoot = project
     okClient,
     okClientIo,
     config,
+    fs2,
+    logstreams,
     webAuth,
     htmlJvm,
     htmlJs,

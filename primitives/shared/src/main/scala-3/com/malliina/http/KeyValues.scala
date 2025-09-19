@@ -39,7 +39,7 @@ object KeyValues:
 
   private inline def tcInstances[TC[_], A <: Tuple]: List[TC[Any]] =
     inline erasedValue[A] match
-      case _: EmptyTuple => Nil
+      case _: EmptyTuple     => Nil
       case _: (head *: tail) =>
         val headTypeClass = summonInline[TC[head]]
         val tailTypeClasses = tcInstances[TC, tail]

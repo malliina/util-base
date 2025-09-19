@@ -13,8 +13,7 @@ sealed abstract class AuthError(val key: String):
 case class OkError(error: ResponseError) extends AuthError("http_error"):
   override def message: ErrorMessage = ErrorMessage(error match
     case StatusError(r, _)                    => s"Status code ${r.code}."
-    case com.malliina.http.JsonError(_, _, _) => "JSON error."
-  )
+    case com.malliina.http.JsonError(_, _, _) => "JSON error.")
 
 object OkError:
   def apply(e: ResponseException): OkError = apply(e.error)

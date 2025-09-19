@@ -82,10 +82,11 @@ trait CallbackValidator[F[_]: Sync, U]:
   def validateCallback(cb: Callback): F[Either[AuthError, U]] =
     val isStateOk = cb.requestState.exists(rs => cb.sessionState.contains(rs))
     if isStateOk then
-      cb.codeQuery.map(code => validate(Code(code), cb.redirectUrl, cb.requestNonce)).getOrElse {
-        log.error(s"Authentication failed, code missing.")
-        Sync[F].pure(Left(OAuthError(ErrorMessage("Code missing."))))
-      }
+      cb.codeQuery
+        .map(code => validate(Code(code), cb.redirectUrl, cb.requestNonce))
+        .getOrElse:
+          log.error(s"Authentication failed, code missing.")
+          Sync[F].pure(Left(OAuthError(ErrorMessage("Code missing."))))
     else
       val detailed = (cb.requestState, cb.sessionState) match
         case (Some(rs), Some(ss)) => s"Got '$rs', expected '$ss'."

@@ -13,4 +13,7 @@ object Utils:
   def urlEncode(s: String) = URLEncoder.encode(s, StandardCharsets.UTF_8.name())
 
   def stringify(map: Map[String, String]): String =
-    map.map { case (key, value) => s"$key=$value" }.mkString("&")
+    map
+      .map:
+        case (key, value) => s"$key=$value"
+      .mkString("&")

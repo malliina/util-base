@@ -5,6 +5,7 @@ object HttpHeaders extends HttpHeaders
 trait HttpHeaders {
   val `Accept-Encoding` = "Accept-Encoding"
   val Authorization = "Authorization"
+  val Basic = "Basic"
   val `Content-Encoding` = "Content-Encoding"
   val `Content-Type` = "Content-Type"
   val deflate = "deflate"
