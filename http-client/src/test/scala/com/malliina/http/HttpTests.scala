@@ -14,6 +14,13 @@ class HttpTests extends munit.CatsEffectSuite {
   )
   val url = FullUrl("http", "localhost:9000", "/headers")
 
+  http.test("Java HTTP client throws on restricted headers") { client =>
+    val iae = intercept[IllegalArgumentException] {
+      client.postString(url, "content", HttpHeaders.text.plain, Map("content-length" -> "12"))
+    }
+    assertEquals(iae.getMessage, """restricted header name: "content-length"""")
+  }
+
   http.test("Java HTTP".ignore) { client =>
     client.getAs[Json](url).map { res =>
       println(res)
