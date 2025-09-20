@@ -145,6 +145,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .dependsOn(primitivesJvm, okClientIo)
   .settings(
     crossScalaVersions := Seq(versions.scala3),
+    Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "com.nimbusds" % "nimbus-jose-jwt" % versions.nimbusJwt,
       "commons-codec" % "commons-codec" % versions.commonsCodec,
