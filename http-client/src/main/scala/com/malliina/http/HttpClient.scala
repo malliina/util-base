@@ -6,6 +6,7 @@ import io.circe.{Decoder, Encoder, Json}
 
 import java.net.http.{HttpClient => JHttpClient}
 import java.nio.file.Path
+import scala.concurrent.duration.FiniteDuration
 
 object HttpClient {
   def javaResource[F[_]: Sync](
@@ -113,5 +114,11 @@ trait HttpClient[F[_]] extends SimpleHttpClient[F] {
   def socket(
     url: FullUrl,
     headers: Map[String, String]
+  ): Resource[F, ReconnectingSocket[F, Socket]] = socket(url, headers, WebSocket.DefaultBackOff)
+
+  def socket(
+    url: FullUrl,
+    headers: Map[String, String],
+    backoffTime: FiniteDuration
   ): Resource[F, ReconnectingSocket[F, Socket]]
 }

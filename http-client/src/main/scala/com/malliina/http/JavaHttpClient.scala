@@ -14,6 +14,7 @@ import java.net.http.HttpResponse._
 import java.net.http.{HttpRequest, HttpClient => JHttpClient, HttpResponse => JHttpResponse}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.concurrent.duration.FiniteDuration
 
 object JavaHttpClient extends HttpHeaders {
   def requestFor(url: FullUrl, headers: Map[String, String]): HttpRequest =
@@ -270,9 +271,10 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
 
   override def socket(
     url: FullUrl,
-    headers: Map[String, String]
+    headers: Map[String, String],
+    backoffTime: FiniteDuration
   ): Resource[F, ReconnectingSocket[F, JavaSocket[F]]] =
-    WebSocket.build[F](url, headers, javaHttp)
+    WebSocket.build[F](url, headers, javaHttp, backoffTime)
 
   private def fetchJson[T: Decoder](request: HttpRequest, url: FullUrl): F[T] =
     fetchFold(request, jsonBodyParser[T](url))

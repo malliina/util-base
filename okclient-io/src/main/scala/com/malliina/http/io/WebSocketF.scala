@@ -8,8 +8,10 @@ import com.malliina.http.{FullUrl, OkHttpHttpClient, ReconnectingSocket, SocketB
 import com.malliina.util.AppLogger
 import fs2.concurrent.Topic
 import okhttp3._
+import org.typelevel.ci.CIString
 
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.duration.FiniteDuration
 
 object WebSocketF {
   private val log = AppLogger(getClass)
@@ -17,7 +19,8 @@ object WebSocketF {
   def build[F[_]: Async](
     url: FullUrl,
     headers: Map[String, String],
-    client: OkHttpClient
+    client: OkHttpClient,
+    backoffTime: FiniteDuration = com.malliina.http.WebSocket.DefaultBackOff
   ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] =
     for {
       d <- Dispatcher.parallel[F]
@@ -31,13 +34,19 @@ object WebSocketF {
     client: OkHttpClient,
     d: Dispatcher[F]
   ) extends SocketBuilder[F, OkSocket[F]] {
-    val request = OkHttpHttpClient.requestFor(url, headers).build()
+    private val builder = OkHttpHttpClient.requestFor(url, headers)
     val interrupted = new AtomicBoolean(false)
 
-    override def connect(sink: Topic[F, SocketEvent]): F[OkSocket[F]] = Sync[F].delay {
+    override def connect(
+      sink: Topic[F, SocketEvent],
+      headers: Map[CIString, String]
+    ): F[OkSocket[F]] = Sync[F].delay {
       val listener = new OkListener(url, sink, interrupted, d)
       log.info(s"Connecting to '$url'...")
-      new OkSocket(client.newWebSocket(request, listener.listener))
+      val connBuilder = headers.foldLeft(builder) { case (b, (k, v)) =>
+        b.addHeader(k.toString, v)
+      }
+      new OkSocket(client.newWebSocket(connBuilder.build(), listener.listener))
     }
   }
 }

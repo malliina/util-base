@@ -8,6 +8,7 @@ import com.malliina.http.{CatsEffects, Effects, FullUrl, HttpClient, HttpRespons
 import okhttp3._
 
 import java.io.IOException
+import scala.concurrent.duration.FiniteDuration
 
 object HttpClientIO {
   def resource[F[_]: Async]: Resource[F, HttpClientF2[F]] =
@@ -48,8 +49,10 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
     client.newCall(request).io
   override def socket(
     url: FullUrl,
-    headers: Map[String, String]
-  ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] = WebSocketF.build(url, headers, client)
+    headers: Map[String, String],
+    backoffTime: FiniteDuration
+  ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] =
+    WebSocketF.build(url, headers, client, backoffTime)
 }
 
 abstract class HttpClientF[F[_]](effects: Effects[F])

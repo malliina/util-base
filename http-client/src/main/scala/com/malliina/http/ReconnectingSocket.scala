@@ -1,28 +1,34 @@
 package com.malliina.http
 
 import cats.effect.{Async, Ref, Resource, Sync}
+import cats.implicits.catsSyntaxApplicativeError
 import cats.syntax.all.{catsSyntaxFlatMapOps, toFlatMapOps, toFunctorOps}
 import com.malliina.http.ReconnectingSocket.log
-import com.malliina.http.SocketEvent.{Closed, Failure, Idle, TextMessage}
+import com.malliina.http.SocketEvent.{Closed, Failure, TextMessage}
 import com.malliina.util.AppLogger
 import fs2.Stream
 import fs2.concurrent.{SignallingRef, Topic}
 import io.circe.{Decoder, Json, parser}
+import org.typelevel.ci.{CIString, CIStringSyntax}
 
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 object ReconnectingSocket {
   private val log = AppLogger(getClass)
 
+  val `X-Connection` = ci"X-Connection"
+
   def resource[F[_]: Async, S <: WebSocketOps[F]](
-    builder: SocketBuilder[F, S]
+    builder: SocketBuilder[F, S],
+    backoffTime: FiniteDuration = WebSocket.DefaultBackOff
   ): Resource[F, ReconnectingSocket[F, S]] = {
     val make = for {
       topic <- Topic[F, SocketEvent]
       ref <- Ref.of[F, Option[S]](None)
+      conns <- Ref.of[F, Int](0)
       interrupter <- SignallingRef[F, Boolean](false)
-    } yield new ReconnectingSocket[F, S](topic, ref, interrupter, builder)
+    } yield new ReconnectingSocket[F, S](topic, ref, conns, interrupter, builder, backoffTime)
     Resource.make(make)(_.close)
   }
 }
@@ -30,15 +36,22 @@ object ReconnectingSocket {
 class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
   topic: Topic[F, SocketEvent],
   active: Ref[F, Option[S]],
+  connections: Ref[F, Int],
   interrupter: SignallingRef[F, Boolean],
   builder: SocketBuilder[F, S],
-  backoffTime: FiniteDuration = 10.seconds
+  backoffTime: FiniteDuration = WebSocket.DefaultBackOff
 ) extends WebSocketOps[F] {
   val F = Sync[F]
   def url = builder.url
   private val interrupted = new AtomicBoolean(false)
 
-  def connectOnce: F[S] = builder.connect(topic)
+  def connectOnce: F[S] =
+    connections.updateAndGet(_ + 1).flatMap { attempt =>
+      builder.connect(topic, Map(ReconnectingSocket.`X-Connection` -> s"$attempt")).onError {
+        case connError =>
+          delay(log.warn(s"Failed to connect to ${builder.url}.", connError))
+      }
+    }
 
   val connectSocket: F[S] = connectOnce.flatMap { socket =>
     active.set(Option(socket)).map(_ => socket)
@@ -55,14 +68,6 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
         err => Stream.raiseError(new Exception(s"Not JSON: '$message'.")),
         ok => Stream.emit(ok)
       )
-  }
-  private val backoff =
-    Stream.eval(delay(log.info(s"Reconnecting to '$url' in $backoffTime..."))).flatMap { _ =>
-      Stream.sleep(backoffTime).map(_ => Idle)
-    }
-  private val untilFailure: Stream[F, SocketEvent] = allEvents.takeWhile {
-    case Failure(_, _) => false
-    case _             => true
   }
   private val eventsOrFailure: Stream[F, SocketEvent] = allEvents.flatMap {
     case f @ Failure(_, t) =>

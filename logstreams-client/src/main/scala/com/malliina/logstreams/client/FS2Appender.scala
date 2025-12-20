@@ -81,20 +81,19 @@ class FS2AppenderF[F[_]: Async](
         val (socket, closer) = d.unsafeRunSync(socketIo.allocated)
         client = Option(socket)
         socketClosable = closer
-        d.unsafeRunAndForget(socket.events.compile.drain)
-        val task: F[Unit] = logEvents
+        val connectAndReceive = socket.events
+        val send = logEvents
           .groupWithin(100, 200.millis)
           .evalMap(es => socket.send(LogEvents(es.toList)))
           .onComplete:
             fs2.Stream
               .eval(F.delay(addInfo(s"Appender [$name] completed.")))
               .flatMap(_ => fs2.Stream.empty)
-          .compile
-          .drain
-        d.unsafeRunAndForget(task)
+        val connectAndSend = connectAndReceive.concurrently(send).compile.drain
+        d.unsafeRunAndForget(connectAndSend)
         super.start()
       result.left.toOption foreach addError
     else addInfo("Logstreams client is disabled.")
 
-  override def stop(): Unit =
-    d.unsafeRunSync(client.map(_.close).getOrElse(F.unit) >> res.finalizer >> socketClosable)
+  override def stop(): Unit = d.unsafeRunSync(stopAsync)
+  private def stopAsync = client.map(_.close).getOrElse(F.unit) >> res.finalizer >> socketClosable

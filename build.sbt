@@ -7,19 +7,19 @@ val versions = new {
   val scala213 = "2.13.16"
   val scala3 = "3.3.1"
 
-  val catsEffect = "3.5.4"
+  val catsEffect = "3.6.3"
   val ci = "1.5.0"
-  val circe = "0.14.14"
-  val commonsCodec = "1.19.0"
-  val config = "1.4.4"
-  val doobie = "1.0.0-RC10"
-  val flywayMysql = "11.12.0"
-  val fs2 = "3.11.0"
-  val http4s = "0.23.30"
-  val logback = "1.5.18"
-  val munit = "1.2.0"
+  val circe = "0.14.15"
+  val commonsCodec = "1.20.0"
+  val config = "1.4.5"
+  val doobie = "1.0.0-RC11"
+  val flywayMysql = "11.19.1"
+  val fs2 = "3.12.2"
+  val http4s = "0.23.33"
+  val logback = "1.5.22"
+  val munit = "1.2.1"
   val munitCats = "2.1.0"
-  val nimbusJwt = "10.5"
+  val nimbusJwt = "10.6"
   val okhttp = "4.12.0"
   val scalatags = "0.13.1"
   val slf4j = "2.0.17"
@@ -65,7 +65,10 @@ val httpClient = Project("http-client", file("http-client"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= Seq("ember-server", "circe", "dsl").map { m =>
+      "org.http4s" %% s"http4s-$m" % versions.http4s % Test
+    } ++ Seq(
+      "org.typelevel" %%% "case-insensitive" % versions.ci,
       "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
