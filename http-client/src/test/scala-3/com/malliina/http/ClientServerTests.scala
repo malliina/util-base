@@ -17,7 +17,7 @@ class TestEndpoints[F[_]: Async] extends Http4sDsl[F]:
   val F = Async[F]
   private val log = AppLogger(getClass)
 
-  def routes(sockets: WebSocketBuilder2[F]) = HttpRoutes
+  def initiallyFailing(sockets: WebSocketBuilder2[F]) = HttpRoutes
     .of[F]:
       case req @ GET -> Root / "ws" =>
         val conn = req.headers
@@ -35,26 +35,29 @@ class TestEndpoints[F[_]: Async] extends Http4sDsl[F]:
   private def delay[A](thunk: => A): F[A] = F.delay(thunk)
 
 object TestServer:
-  val server = EmberServerBuilder
-    .default[IO]
-    .withHost(host"0.0.0.0")
-    .withPort(port"9000")
-    .withHttpWebSocketApp(builder => new TestEndpoints[IO]().routes(builder))
-    .build
+  val flaky = baseServer(builder => new TestEndpoints[IO]().initiallyFailing(builder))
 
-case class TestSystem(client: JavaHttpClient[IO], server: Server)
+  def baseServer[F[_]: Async](makeApp: WebSocketBuilder2[F] => org.http4s.HttpApp[F]) =
+    EmberServerBuilder
+      .default[F]
+      .withHost(host"0.0.0.0")
+      .withPort(port"9000")
+      .withHttpWebSocketApp(builder => makeApp(builder))
+      .build
+
+case class TestSystem(client: JavaHttpClient[IO], server: Server):
+  def port = server.baseUri.port.getOrElse(9000)
 
 class ClientServerTests extends munit.CatsEffectSuite:
-  val app = ResourceFunFixture(
-    HttpTests.client.flatMap(c => TestServer.server.map(s => TestSystem(c, s)))
+  val flakyApp = ResourceFunFixture(
+    HttpTests.client.flatMap(c => TestServer.flaky.map(s => TestSystem(c, s)))
   )
 
   override def munitIOTimeout: Duration = 10.seconds
 
-  app.test("Can send and receive messages after reconnect on failure"): comp =>
-    val port = comp.server.baseUri.port.getOrElse(9000)
+  flakyApp.test("Can send and receive messages after reconnect on failure"): comp =>
     comp.client
-      .socket(FullUrl.ws(s"localhost:$port", "/ws"), Map.empty, 100.millis)
+      .socket(FullUrl.ws(s"localhost:${comp.port}", "/ws"), Map.empty, 100.millis)
       .use: socket =>
         for
           _ <- socket.events.take(1).compile.drain

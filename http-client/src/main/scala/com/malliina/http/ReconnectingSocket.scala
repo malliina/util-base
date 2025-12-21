@@ -117,8 +117,15 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
   }
 
   override def sendMessage(s: String): F[Boolean] =
+    trySend(s).as(true).handleError(_ => false)
+
+  override def trySend(message: String): F[Unit] =
     active.get.flatMap { opt =>
-      opt.map(a => a.sendMessage(s).as(true)).getOrElse(F.pure(false))
+      opt
+        .map(a => a.trySend(message))
+        .getOrElse(
+          F.raiseError(new Exception(s"Unable to send message to '$url'. No active socket."))
+        )
     }
 
   override def closeNow: F[Unit] = close

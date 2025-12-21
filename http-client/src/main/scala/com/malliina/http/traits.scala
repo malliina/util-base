@@ -13,5 +13,6 @@ trait SocketBuilder[F[_], S <: WebSocketOps[F]] {
 trait WebSocketOps[F[_]] {
   def send[T: Encoder](message: T): F[Boolean] = sendMessage(message.asJson.noSpaces)
   def sendMessage(s: String): F[Boolean]
+  def trySend(message: String): F[Unit]
   def closeNow: F[Unit]
 }

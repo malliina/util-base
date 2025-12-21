@@ -1,6 +1,7 @@
 package com.malliina.http
 
 import cats.effect.Async
+import cats.implicits.catsSyntaxApplicativeError
 import cats.syntax.all.{toFlatMapOps, toFunctorOps}
 import com.malliina.http.JavaSocket.log
 import com.malliina.http.Ops.CompletionStageOps
@@ -14,7 +15,11 @@ object JavaSocket {
 }
 
 class JavaSocket[F[_]: Async](impl: JWebSocket, url: FullUrl) extends WebSocketOps[F] {
-  override def sendMessage(s: String): F[Boolean] = delayF(impl.sendText(s, true)).as(true)
+  override def sendMessage(s: String): F[Boolean] =
+    trySend(s).as(true).handleError(_ => false)
+
+  override def trySend(message: String): F[Unit] =
+    delayF(impl.sendText(message, true)).void
 
   override def closeNow: F[Unit] = delayF {
     log.info(s"Closing socket to '$url'...")
