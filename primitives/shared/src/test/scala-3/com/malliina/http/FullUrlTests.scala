@@ -1,5 +1,6 @@
 package com.malliina.http
 
+import com.malliina.values.{AccessToken, IdToken}
 import com.malliina.http.UrlSyntax.{https, url, wss}
 
 class FullUrlTests extends munit.FunSuite:
@@ -21,3 +22,10 @@ class FullUrlTests extends munit.FunSuite:
     val full = url.query(KeyValues[Params].kvs(Params("aa", 1)))
     assertEquals(full, https"www.google.com?a=aa&b=1")
     assertEquals(full.uri, "?a=aa&b=1")
+
+  test("Query showable"):
+    val url = https"www.google.com"
+    val at = AccessToken("at")
+    val it = IdToken("it")
+    val queryUrl = url.queryShow("a" -> at, "i" -> it)
+    assertEquals(queryUrl.url, "https://www.google.com?a=at&i=it")

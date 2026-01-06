@@ -1,6 +1,6 @@
 package com.malliina.http
 
-import com.malliina.values.ErrorMessage
+import com.malliina.values.{ErrorMessage, Showable}
 import com.malliina.values.LiteralsSyntax.{LiteralStringContext, getUnsafe}
 
 import scala.quoted.{Expr, Quotes, quotes}
@@ -13,6 +13,8 @@ trait UrlSyntax:
       ${ FullUrlLiterals.Http('ctx, 'args) }
     inline def https(inline args: Any*): FullUrl =
       ${ FullUrlLiterals.Https('ctx, 'args) }
+    inline def ws(inline args: Any*): FullUrl =
+      ${ FullUrlLiterals.Ws('ctx, 'args) }
     inline def wss(inline args: Any*): FullUrl =
       ${ FullUrlLiterals.Wss('ctx, 'args) }
     inline def url(inline args: Any*): FullUrl =
@@ -21,6 +23,7 @@ trait UrlSyntax:
 private object FullUrlLiterals:
   object Http extends ProtoContext("http")
   object Https extends ProtoContext("https")
+  object Ws extends ProtoContext("ws")
   object Wss extends ProtoContext("wss")
 
   class ProtoContext(proto: String) extends LiteralStringContext[FullUrl]:
@@ -37,3 +40,6 @@ private object FullUrlLiterals:
 extension (url: FullUrl)
   def query[Q: KeyValues](q: Q): FullUrl =
     url.query(KeyValues[Q].kvs(q))
+  def queryShow(kvs: (String, Showable)*): FullUrl =
+    val stringMap: Seq[(String, String)] = kvs.map((k, s) => k -> s)
+    url.withQuery(stringMap*)

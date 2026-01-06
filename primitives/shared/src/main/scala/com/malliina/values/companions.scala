@@ -1,5 +1,6 @@
 package com.malliina.values
 
+import cats.Show
 import io.circe.{Codec, Decoder, Encoder}
 
 trait Identifier extends Any {
@@ -33,14 +34,17 @@ trait WrappedValue[T] {
 
 abstract class IdentCompanion[T <: Identifier] extends JsonCompanion[String, T] {
   override def write(t: T): String = t.id
+  implicit val show: Show[T] = Show.show[T](t => s"${write(t)}")
 }
 
 abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
   override def write(t: T): Long = t.id
+  implicit val show: Show[T] = Show.show[T](t => s"${write(t)}")
 }
 
 abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
   override def write(t: T): String = t.value
+  implicit val show: Show[T] = Show.show[T](t => write(t))
 }
 
 abstract class JsonCompanion[Raw, T](implicit
@@ -49,6 +53,7 @@ abstract class JsonCompanion[Raw, T](implicit
   o: Ordering[Raw],
   r: Readable[Raw]
 ) extends ValidatingCompanion[Raw, T] {
+  @deprecated("Use .build instead.", "6.10.4")
   def apply(raw: Raw): T
 
   override def build(input: Raw): Either[ErrorMessage, T] =
@@ -88,7 +93,6 @@ abstract class EnumCompanion[Raw, T](implicit
   o: Ordering[Raw],
   r: Readable[Raw]
 ) extends ValidatingCompanion[Raw, T] {
-
   def all: Seq[T]
   def resolveName(item: T): Raw = write(item)
   private def allNames = all.map(write).mkString(", ")
