@@ -28,7 +28,7 @@ object CSRFUtils:
       .withEntity(Errors.single("CSRF"))
 
 class CSRFUtils(val conf: CSRFConf) extends CirceInstances:
-  def default[F[_]: Sync: Concurrent](onFailure: Response[F] = defaultFailure): F[CSRF[F, F]] =
+  def default[F[_]: Sync: Concurrent](onFailure: Response[F] = defaultFailure[F]): F[CSRF[F, F]] =
     build[F, F](FunctionK.id[F], onFailure)
 
   def build[F[_]: Sync, G[_]: Concurrent](

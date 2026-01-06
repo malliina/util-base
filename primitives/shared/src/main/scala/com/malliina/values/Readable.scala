@@ -15,6 +15,7 @@ trait Readable[R] {
 }
 
 object Readable {
+  def apply[T](implicit r: Readable[T]): Readable[T] = r
   implicit val string: Readable[String] = (s: String) => Right(s)
   implicit val int: Readable[Int] = fromTry("integer", s => Try(s.toInt))
   implicit val long: Readable[Long] = fromTry("long", s => Try(s.toLong))

@@ -7,7 +7,6 @@ import cats.implicits.toFlatMapOps
 import cats.syntax.all.toFunctorOps
 import com.malliina.http.{CSRFToken, Errors}
 import com.malliina.http4s.BasicService.noCache
-import com.malliina.http4s.FeedbackSupport
 import io.circe.syntax.EncoderOps
 import org.http4s.CacheDirective.*
 import org.http4s.circe.CirceInstances
