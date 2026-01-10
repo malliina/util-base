@@ -33,7 +33,9 @@ class HttpTests extends munit.CatsEffectSuite {
   testClient.test("Java HTTP socket".ignore) { client =>
     val url = FullUrl.wss("logs.malliina.com", "/ws/sources")
     val headers =
-      Map(HttpHeaders.Authorization -> TestAuth.authorizationValue(Username("test"), "test123"))
+      Map(
+        HttpHeaders.Authorization -> TestAuth.authorizationValue(Username.unsafe("test"), "test123")
+      )
     client.socket(url, headers).use { socket =>
       val events = socket.events
         .take(3)

@@ -36,7 +36,12 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: Clien
         )
       email <- jwt.readStringOpt(EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
-    yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)
+    yield CognitoUser(
+      Username.unsafe(username),
+      email.flatMap(Email.build(_).toOption),
+      groups,
+      verified
+    )
 
   override protected def validateClaims(
     parsed: ParsedJWT,
@@ -56,9 +61,9 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] =
     val jwt = verified.parsed
     for
-      email <- jwt.readString(EmailKey).map(Email.apply)
+      email <- jwt.parse[Email](EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
-    yield CognitoUser(Username(email.email), Option(email), groups, verified)
+    yield CognitoUser(Username.unsafe(email.email), Option(email), groups, verified)
 
   override protected def validateClaims(
     parsed: ParsedJWT,

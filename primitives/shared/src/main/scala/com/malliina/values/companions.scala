@@ -32,39 +32,28 @@ trait WrappedValue[T] {
   def value: T
 }
 
-abstract class IdentCompanion[T <: Identifier] extends JsonCompanion[String, T] {
+abstract class IdentCompanion[T <: Identifier] extends ValidatingCompanion[String, T] {
   override def write(t: T): String = t.id
-  implicit val show: Show[T] = Show.show[T](t => s"${write(t)}")
 }
 
-abstract class IdCompanion[T <: WrappedId] extends JsonCompanion[Long, T] {
+abstract class IdCompanion[T <: WrappedId] extends ValidatingCompanion[Long, T] {
   override def write(t: T): Long = t.id
-  implicit val show: Show[T] = Show.show[T](t => s"${write(t)}")
 }
 
-abstract class StringCompanion[T <: WrappedString] extends JsonCompanion[String, T] {
+abstract class StringCompanion[T <: WrappedString] extends ValidatingCompanion[String, T] {
   override def write(t: T): String = t.value
-  implicit val show: Show[T] = Show.show[T](t => write(t))
 }
 
-abstract class JsonCompanion[Raw, T](implicit
-  d: Decoder[Raw],
-  e: Encoder[Raw],
-  o: Ordering[Raw],
-  r: Readable[Raw]
-) extends ValidatingCompanion[Raw, T] {
-  @deprecated("Use .build instead.", "6.10.4")
-  def apply(raw: Raw): T
+abstract class ValidatedLong[T] extends ValidatingCompanion[Long, T]
 
-  override def build(input: Raw): Either[ErrorMessage, T] =
-    Right(apply(input))
-}
+abstract class ValidatedString[T] extends ValidatingCompanion[String, T]
 
 abstract class ValidatingCompanion[Raw, T](implicit
   d: Decoder[Raw],
   e: Encoder[Raw],
   o: Ordering[Raw],
-  r: Readable[Raw]
+  r: Readable[Raw],
+  s: Show[Raw]
 ) {
   implicit val json: Codec[T] = Codec.from(
     d.emap(raw => build(raw).left.map(err => err.message)),
@@ -72,8 +61,10 @@ abstract class ValidatingCompanion[Raw, T](implicit
   )
   implicit val ordering: Ordering[T] = o.on(write)
   implicit val readable: Readable[T] = r.emap(build)
-
+  implicit val show: Show[T] = Show.show[T](t => s.show(write(t)))
   def build(input: Raw): Either[ErrorMessage, T]
+  def unsafe(input: Raw): T =
+    build(input).fold(err => throw new IllegalArgumentException(err.message), identity)
   def write(t: T): Raw
   def defaultError(in: Raw): ErrorMessage = ErrorMessage(s"Invalid input: '$in'.")
 }
@@ -91,7 +82,8 @@ abstract class EnumCompanion[Raw, T](implicit
   f: Decoder[Raw],
   e: Encoder[Raw],
   o: Ordering[Raw],
-  r: Readable[Raw]
+  r: Readable[Raw],
+  s: Show[Raw]
 ) extends ValidatingCompanion[Raw, T] {
   def all: Seq[T]
   def resolveName(item: T): Raw = write(item)

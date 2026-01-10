@@ -14,6 +14,8 @@ object UnixPath extends StringCompanion[UnixPath] {
   val WindowsPathSeparator = '\\'
   val Empty: UnixPath = UnixPath("")
 
+  override def build(input: String): Either[ErrorMessage, UnixPath] = Right(fromRaw(input))
+
   def apply(path: Path): UnixPath = fromRaw(path.toString)
 
   def fromRaw(s: String): UnixPath = UnixPath(s.replace(WindowsPathSeparator, UnixPathSeparator))

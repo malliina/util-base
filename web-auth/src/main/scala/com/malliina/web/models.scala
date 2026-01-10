@@ -17,17 +17,29 @@ import java.time.Instant
 import scala.concurrent.duration.{Duration, DurationLong}
 
 case class ClientId(value: String) extends AnyVal with WrappedString
-object ClientId extends StringCompanion[ClientId]
+object ClientId extends StringCompanion[ClientId]:
+  override def build(input: String): Either[ErrorMessage, ClientId] =
+    if input.isBlank then Left(ErrorMessage("Client ID must not be blank."))
+    else Right(apply(input))
 
 case class ClientSecret(value: String) extends AnyVal with WrappedString
-object ClientSecret extends StringCompanion[ClientSecret]
+object ClientSecret extends StringCompanion[ClientSecret]:
+  override def build(input: String): Either[ErrorMessage, ClientSecret] =
+    if input.isBlank then Left(ErrorMessage("Client secret must not be blank."))
+    else Right(apply(input))
 
 case class Issuer(value: String) extends AnyVal with WrappedString
-object Issuer extends StringCompanion[Issuer]
+object Issuer extends StringCompanion[Issuer]:
+  override def build(input: String): Either[ErrorMessage, Issuer] =
+    if input.isBlank then Left(ErrorMessage("Issuer must not be blank."))
+    else Right(apply(input))
 
 case class Code(code: String) extends AnyVal with WrappedString:
   override def value = code
-object Code extends StringCompanion[Code]
+object Code extends StringCompanion[Code]:
+  override def build(input: String): Either[ErrorMessage, Code] =
+    if input.isBlank then Left(ErrorMessage("Code must not be blank."))
+    else Right(apply(input))
 
 case class AuthConf(clientId: ClientId, clientSecret: ClientSecret)
 
@@ -198,7 +210,7 @@ object TwitterTokens:
   def fromString(in: String) =
     val map = parseMap(in)
     for
-      ot <- map.get("oauth_token").map(AccessToken.apply)
+      ot <- map.get("oauth_token").flatMap(AccessToken.build(_).toOption)
       ots <- map.get("oauth_token_secret")
       c <- map.get("oauth_callback_confirmed")
     yield TwitterTokens(ot, ots, c == "true")
@@ -220,7 +232,7 @@ object TwitterAccess:
   def fromString(in: String) =
     val map = TwitterTokens.parseMap(in)
     for
-      ot <- map.get("oauth_token").map(AccessToken.apply)
+      ot <- map.get("oauth_token").flatMap(AccessToken.build(_).toOption)
       ots <- map.get("oauth_token_secret")
     yield TwitterAccess(ot, ots)
 
@@ -270,6 +282,7 @@ case class ParsedJWT(
 
 case class Verified(parsed: ParsedJWT):
   def expiresIn: Duration = (parsed.exp.toEpochMilli - Instant.now().toEpochMilli).millis
+  def read[T: Readable](key: String): Either[JWTError, T] = parsed.parse[T](key)
   def readString(key: String) = parsed.readString(key)
   def readBoolean(key: String) = parsed.readBoolean(key)
   def token = parsed.token

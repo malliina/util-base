@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 class EmailAuthFlow[F[_]: Sync](conf: AuthCodeConf[F]) extends StandardAuthFlow[F, Email](conf):
   override def parse(v: Verified): Either[JWTError, Email] =
-    v.readString(EmailKey).map(Email.apply)
+    v.read[Email](EmailKey)
 
 trait AuthFlow[F[_], U] extends FlowStart[F] with CallbackValidator[F, U]
 

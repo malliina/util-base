@@ -33,5 +33,5 @@ class GoogleAuthFlow[F[_]: Sync](conf: AuthCodeConf[F])
         _ == true,
         InvalidClaims(validated.token, ErrorMessage("Email not verified."))
       )
-      email <- validated.readString(EmailKey).map(Email.apply)
+      email <- validated.read[Email](EmailKey)
     yield email

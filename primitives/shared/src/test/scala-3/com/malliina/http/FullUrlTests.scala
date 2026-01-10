@@ -25,7 +25,7 @@ class FullUrlTests extends munit.FunSuite:
 
   test("Query showable"):
     val url = https"www.google.com"
-    val at = AccessToken("at")
-    val it = IdToken("it")
+    val at = AccessToken.unsafe("at")
+    val it = IdToken.unsafe("it")
     val queryUrl = url.queryShow("a" -> at, "i" -> it)
     assertEquals(queryUrl.url, "https://www.google.com?a=at&i=it")

@@ -21,7 +21,7 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
       .build[IO](
         FullUrl.wss("logs.malliina.com", "/ws/sources"),
 //        FullUrl.ws("localhost:9000", "/ws/sources"),
-        Map(Authorization -> TestAuth.authorizationValue(Username("test"), "test1234")),
+        Map(Authorization -> TestAuth.authorizationValue(Username.unsafe("test"), "test1234")),
         client.client
       )
       .use { socket =>
