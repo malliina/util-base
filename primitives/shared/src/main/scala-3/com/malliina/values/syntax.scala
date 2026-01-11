@@ -17,6 +17,12 @@ trait Literals:
     inline def error(args: Any*): ErrorMessage =
       val msg = ctx.s(args*)
       ErrorMessage(msg)
+    inline def jwt(inline args: Any*): JSONWebToken =
+      ${ Impls.JWTLiteral('ctx, 'args) }
+    inline def user(inline args: Any*): Username =
+      ${ Impls.UsernameLiteral('ctx, 'args) }
+    inline def pass(inline args: Any*): Password =
+      ${ Impls.PasswordLiteral('ctx, 'args) }
 
 private object Impls:
   object NonNegLiteral extends LiteralInt[NonNeg]:
@@ -35,6 +41,27 @@ private object Impls:
         .build(in)
         .map: _ =>
           '{ ErrorMessage.build(${ Expr(in) }).getUnsafe }
+
+  object JWTLiteral extends LiteralStringContext[JSONWebToken]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[JSONWebToken]] =
+      JSONWebToken
+        .build(in)
+        .map: _ =>
+          '{ JSONWebToken.build(${ Expr(in) }).getUnsafe }
+
+  object UsernameLiteral extends LiteralStringContext[Username]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[Username]] =
+      Username
+        .build(in)
+        .map: _ =>
+          '{ Username.build(${ Expr(in) }).getUnsafe }
+
+  object PasswordLiteral extends LiteralStringContext[Password]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[Password]] =
+      Password
+        .build(in)
+        .map: _ =>
+          '{ Password.build(${ Expr(in) }).getUnsafe }
 
 object LiteralsSyntax:
   trait LiteralInt[T]:

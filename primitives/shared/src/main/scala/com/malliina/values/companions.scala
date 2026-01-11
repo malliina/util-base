@@ -2,6 +2,7 @@ package com.malliina.values
 
 import cats.Show
 import io.circe.{Codec, Decoder, Encoder}
+import org.typelevel.ci.CIString
 
 trait Identifier extends Any {
   def id: String
@@ -44,7 +45,19 @@ abstract class StringCompanion[T <: WrappedString] extends ValidatingCompanion[S
   override def write(t: T): String = t.value
 }
 
+object CICodec {
+  implicit val ciCodec: Codec[CIString] = Codec.from(
+    Decoder.decodeString.map(s => CIString(s)),
+    Encoder.encodeString.contramap[CIString](_.toString)
+  )
+}
+import CICodec.ciCodec
+
+abstract class ValidatedCIString[T] extends ValidatingCompanion[CIString, T]
+
 abstract class ValidatedLong[T] extends ValidatingCompanion[Long, T]
+
+abstract class ValidatedInt[T] extends ValidatingCompanion[Int, T]
 
 abstract class ValidatedString[T] extends ValidatingCompanion[String, T]
 

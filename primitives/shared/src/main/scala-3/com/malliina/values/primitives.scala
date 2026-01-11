@@ -1,20 +1,17 @@
 package com.malliina.values
 
-import io.circe.{Codec, Decoder, Encoder}
-
 import scala.annotation.targetName
 
 opaque type NonNeg = Int
 
-object NonNeg:
-  given Codec[NonNeg] = Codec.from(
-    Decoder.decodeInt.emap(i => apply(i).left.map(_.message)),
-    Encoder.encodeInt.contramap(identity)
-  )
+object NonNeg extends ValidatedInt[NonNeg]:
+  override def build(input: Int): Either[ErrorMessage, NonNeg] =
+    if input >= 0 then Right(input)
+    else Left(ErrorMessage(s"Value must be non-negative. Got '$input'."))
 
-  def apply(i: Int): Either[ErrorMessage, NonNeg] =
-    if i >= 0 then Right(i)
-    else Left(ErrorMessage(s"Value must be non-negative. Got '$i'."))
+  override def write(t: NonNeg): Int = t
+
+  def apply(i: Int): Either[ErrorMessage, NonNeg] = build(i)
 
   extension (nn: NonNeg)
     def value: Int = nn
@@ -27,15 +24,14 @@ object NonNeg:
   */
 opaque type NonBlank <: String = String
 
-object NonBlank:
-  def apply(s: String): Either[ErrorMessage, NonBlank] =
+object NonBlank extends ValidatedString[NonBlank]:
+  override def build(s: String): Either[ErrorMessage, NonBlank] =
     val trimmed = s.trim
     if trimmed.nonEmpty then Right(trimmed)
     else Left(ErrorMessage("Must not be blank."))
 
-  extension (nb: NonBlank) def append(s: String): NonBlank = s"$nb$s"
+  def apply(s: String): Either[ErrorMessage, NonBlank] = build(s)
 
-  given Codec[NonBlank] = Codec.from(
-    Decoder.decodeString.emap(i => apply(i).left.map(_.message)),
-    Encoder.encodeString.contramap(identity)
-  )
+  override def write(t: NonBlank): String = t
+
+  extension (nb: NonBlank) def append(s: String): NonBlank = s"$nb$s"

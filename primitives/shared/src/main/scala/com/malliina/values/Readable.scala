@@ -3,6 +3,7 @@ package com.malliina.values
 import com.malliina.http.FullUrl
 import com.malliina.measure.{DistanceM, SpeedM, Temperature}
 import com.malliina.storage.StorageSize
+import org.typelevel.ci.CIString
 
 import scala.util.Try
 
@@ -31,6 +32,7 @@ object Readable {
     case other   => Left(ErrorMessage(s"Invalid boolean: '$other'."))
   }
   implicit val url: Readable[FullUrl] = string.emap(FullUrl.build)
+  implicit val ciString: Readable[CIString] = string.map(s => CIString(s))
 
   private def fromTry[T](label: String, t: String => Try[T]) =
     string.emap(s => t(s).fold(_ => Left(ErrorMessage(s"Invalid $label: '$s'.")), v => Right(v)))

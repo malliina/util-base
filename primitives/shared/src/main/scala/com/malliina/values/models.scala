@@ -36,29 +36,45 @@ object Password extends StringCompanion[Password] {
 }
 
 case class AccessToken private (token: String) extends TokenValue(token)
-object AccessToken extends StringCompanion[AccessToken] {
-  override def build(input: String): Either[ErrorMessage, AccessToken] =
-    if (input.isBlank) Left(ErrorMessage("Access token cannot be blank."))
-    else Right(apply(input))
+object AccessToken extends TokenCompanion[AccessToken] {
+  override protected def make(token: String): AccessToken = apply(token)
 }
 
 case class IdToken private (token: String) extends TokenValue(token)
-object IdToken extends StringCompanion[IdToken] {
-  override def build(input: String): Either[ErrorMessage, IdToken] =
-    if (input.isBlank) Left(ErrorMessage("ID token cannot be blank."))
-    else Right(apply(input))
+object IdToken extends TokenCompanion[IdToken] {
+  override protected def make(token: String): IdToken = apply(token)
 }
 
 case class RefreshToken private (token: String) extends TokenValue(token)
-object RefreshToken extends StringCompanion[RefreshToken] {
-  override def build(input: String): Either[ErrorMessage, RefreshToken] =
-    if (input.isBlank) Left(ErrorMessage("Refresh token cannot be blank."))
+object RefreshToken extends TokenCompanion[RefreshToken] {
+  override protected def make(token: String): RefreshToken = apply(token)
+}
+
+case class JSONWebToken private (token: String) extends TokenValue(token) {
+  def access = AccessToken.fromJwt(this)
+  def refresh = RefreshToken.fromJwt(this)
+  def id = IdToken.fromJwt(this)
+}
+
+object JSONWebToken extends StringCompanion[JSONWebToken] {
+  override def build(input: String): Either[ErrorMessage, JSONWebToken] =
+    if (input.isBlank) Left(ErrorMessage("JWT cannot be blank."))
     else Right(apply(input))
 }
 
 sealed abstract class TokenValue(token: String) extends WrappedString {
   override def value: String = token
   override def toString: String = token
+}
+
+sealed abstract class TokenCompanion[T <: WrappedString] extends StringCompanion[T] {
+  protected def make(token: String): T
+
+  override def build(input: String): Either[ErrorMessage, T] =
+    if (input.isBlank) Left(ErrorMessage("Token cannot be blank."))
+    else Right(make(input))
+
+  def fromJwt(jwt: JSONWebToken): T = make(jwt.token)
 }
 
 case class ErrorMessage(message: String) extends WrappedString {

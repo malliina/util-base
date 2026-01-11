@@ -40,8 +40,12 @@ inThisBuild(
 )
 
 val moduleSettings = Seq(
-  libraryDependencies ++= Seq("generic", "parser")
-    .map(m => "io.circe" %% s"circe-$m" % versions.circe) ++ Seq(munit),
+  libraryDependencies ++= Seq("generic", "parser").map { m =>
+    "io.circe" %% s"circe-$m" % versions.circe
+  } ++ Seq(
+    "org.typelevel" %%% "case-insensitive" % versions.ci,
+    munit
+  ),
   crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
 )
 val primitives = crossProject(JSPlatform, JVMPlatform)
@@ -68,7 +72,6 @@ val httpClient = Project("http-client", file("http-client"))
     libraryDependencies ++= Seq("ember-server", "circe", "dsl").map { m =>
       "org.http4s" %% s"http4s-$m" % versions.http4s % Test
     } ++ Seq(
-      "org.typelevel" %%% "case-insensitive" % versions.ci,
       "org.slf4j" % "slf4j-api" % versions.slf4j,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "cats-effect" % versions.catsEffect,
