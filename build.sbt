@@ -10,7 +10,7 @@ val versions = new {
   val catsEffect = "3.6.3"
   val ci = "1.5.0"
   val circe = "0.14.15"
-  val commonsCodec = "1.20.0"
+  val commonsCodec = "1.21.0"
   val config = "1.4.6"
   val doobie = "1.0.0-RC12"
   val flywayMysql = "12.0.3"
@@ -20,7 +20,7 @@ val versions = new {
   val munit = "1.2.3"
   val munitCats = "2.1.0"
   val nimbusJwt = "10.8"
-  val okhttp = "4.12.0"
+  val okhttp = "5.3.2"
   val scalatags = "0.13.1"
   val slf4j = "2.0.17"
 }
@@ -89,7 +89,7 @@ val okClient = project
   .dependsOn(primitivesJvm, httpClient, httpClient % "test->test")
   .settings(
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % versions.okhttp,
+      "com.squareup.okhttp3" % "okhttp-jvm" % versions.okhttp,
       munit
     ),
     releaseProcess := tagReleaseProcess.value,
