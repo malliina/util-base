@@ -6,7 +6,7 @@ import cats.effect.std.Dispatcher
 import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import cats.syntax.all.{catsSyntaxFlatMapOps, toFunctorOps}
 import com.malliina.http.io.HttpClientIO
-import com.malliina.http.{HttpClient, ReconnectingSocket, WebSocketOps}
+import com.malliina.http.{HttpClient, ReconnectingSocket, SendException, WebSocketOps}
 import com.malliina.logback.fs2.{FS2AppenderComps, LoggingComps}
 import com.malliina.logstreams.client.FS2Appender.ResourceParts
 
@@ -84,7 +84,7 @@ class FS2AppenderF[F[_]: Async](
         val connectAndReceive = socket.events
         val send = logEvents
           .groupWithin(100, 200.millis)
-          .evalMap(es => socket.send(LogEvents(es.toList)))
+          .flatMap(es => retry(socket.trySendJson(LogEvents(es.toList))))
           .onComplete:
             fs2.Stream
               .eval(F.delay(addInfo(s"Appender [$name] completed.")))
@@ -94,6 +94,22 @@ class FS2AppenderF[F[_]: Async](
         super.start()
       result.left.toOption foreach addError
     else addInfo("Logstreams client is disabled.")
+
+  private def retry[T](f: F[T], maxAttempts: Int = 100): fs2.Stream[F, T] =
+    fs2.Stream
+      .retry(
+        f,
+        1.seconds,
+        prev => 5.minutes.min(prev * 2),
+        maxAttempts,
+        {
+          case se: SendException => true
+          case _                 => false
+        }
+      )
+      .handleErrorWith: err =>
+        addWarn(s"Failed to send message after $maxAttempts attempts, dropping message.", err)
+        fs2.Stream.empty
 
   override def stop(): Unit = d.unsafeRunSync(stopAsync)
   private def stopAsync = client.map(_.close).getOrElse(F.unit) >> res.finalizer >> socketClosable

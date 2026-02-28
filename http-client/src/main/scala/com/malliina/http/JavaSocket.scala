@@ -15,11 +15,15 @@ object JavaSocket {
 }
 
 class JavaSocket[F[_]: Async](impl: JWebSocket, url: FullUrl) extends WebSocketOps[F] {
+  private val F = Async[F]
+
   override def sendMessage(s: String): F[Boolean] =
     trySend(s).as(true).handleError(_ => false)
 
   override def trySend(message: String): F[Unit] =
-    delayF(impl.sendText(message, true)).void
+    delayF(impl.sendText(message, true)).void.handleErrorWith { cause =>
+      F.raiseError(new SendException(s"Failed to send '$message' to '$url'.", Option(cause)))
+    }
 
   override def closeNow: F[Unit] = delayF {
     log.info(s"Closing socket to '$url'...")
@@ -27,5 +31,5 @@ class JavaSocket[F[_]: Async](impl: JWebSocket, url: FullUrl) extends WebSocketO
   }
 
   private def delayF[A](thunk: => CompletionStage[A]): F[A] =
-    Async[F].delay(thunk).flatMap(_.effect[F])
+    F.delay(thunk).flatMap(_.effect[F])
 }

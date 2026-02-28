@@ -46,7 +46,7 @@ object WebSocketF {
       val connBuilder = headers.foldLeft(builder) { case (b, (k, v)) =>
         b.addHeader(k.toString, v)
       }
-      new OkSocket(client.newWebSocket(connBuilder.build(), listener.listener))
+      new OkSocket(client.newWebSocket(connBuilder.build(), listener.listener), url)
     }
   }
 }

@@ -1,5 +1,9 @@
 package com.malliina.http
 
+class MimeType(tpe: String) {
+  def sub(subType: String) = s"$tpe/$subType"
+}
+
 object HttpHeaders extends HttpHeaders
 
 trait HttpHeaders {
@@ -11,12 +15,12 @@ trait HttpHeaders {
   val deflate = "deflate"
   val gzip = "gzip"
   val `User-Agent` = "User-Agent"
-  object application {
-    val octetStream = "application/octet-stream"
-    val form = "application/x-www-form-urlencoded"
-    val json = "application/json"
+  object application extends MimeType("application") {
+    val octetStream = sub("octet-stream")
+    val form = sub("x-www-form-urlencoded")
+    val json = sub("json")
   }
-  object text {
-    val plain = "text/plain"
+  object text extends MimeType("text") {
+    val plain = sub("plain")
   }
 }

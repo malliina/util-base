@@ -124,7 +124,9 @@ class ReconnectingSocket[F[_]: Async, S <: WebSocketOps[F]](
       opt
         .map(a => a.trySend(message))
         .getOrElse(
-          F.raiseError(new Exception(s"Unable to send message to '$url'. No active socket."))
+          F.raiseError(
+            new SendException(s"Unable to send '$message' to '$url'. No active socket.", None)
+          )
         )
     }
 
