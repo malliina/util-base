@@ -4,7 +4,10 @@ import com.malliina.values.StringEnumCompanion
 import io.circe.{Decoder, Json, ParsingFailure}
 import io.circe.parser.decode
 
+import java.nio.charset.Charset
+
 trait ResponseMeta {
+  def charset: Charset
   def headers: Map[String, Seq[String]]
   def code: Int
   def status: Int = code
@@ -15,13 +18,13 @@ trait ResponseContent[T] extends ResponseMeta {
   def body: T
 }
 
-trait HttpResponse extends ResponseContent[String] {
-  def body: String = asString
+trait HttpResponse extends ResponseContent[Array[Byte]] {
+  def charset: Charset
 
   /** @return
     *   the body as a string
     */
-  def asString: String
+  def asString: String = new String(body, charset)
   def json: Either[ParsingFailure, Json] = io.circe.parser.parse(asString)
   def parse[T: Decoder]: Either[io.circe.Error, T] = decode[T](asString)
 }
@@ -52,7 +55,7 @@ sealed trait ResponseError {
 
 case class StatusError(response: HttpResponse, url: FullUrl) extends ResponseError
 
-case class JsonError(error: io.circe.Error, response: ResponseMeta, url: FullUrl)
+case class JsonError(error: io.circe.Error, response: HttpResponse, url: FullUrl)
   extends ResponseError
 
 class ResponseException(val error: ResponseError)

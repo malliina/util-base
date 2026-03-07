@@ -77,10 +77,11 @@ object JavaHttpClient extends HttpHeaders {
 
   def jsonBodyParser[T: Decoder](url: FullUrl): BodyHandler[Either[ResponseError, T]] =
     bodyParser(url) { res =>
-      val parsingHandler = stringHandler().map[Either[ResponseError, T]] { string =>
+      val parsingHandler = bytesHandler().map[Either[ResponseError, T]] { bytes =>
+        val string = new String(bytes, StandardCharsets.UTF_8)
         parser
           .decode[T](string)
-          .fold(err => Left(JsonError(err, new JavaResponseMeta(res), url)), t => Right(t))
+          .fold(err => Left(JsonError(err, new JavaResponseInfo(res, bytes), url)), t => Right(t))
       }
       parsingHandler(res)
     }
@@ -94,8 +95,7 @@ object JavaHttpClient extends HttpHeaders {
         successParser(res)
       } else {
         val errorHandler = bytesHandler().map[Either[ResponseError, T]] { bytes =>
-          val str = new String(bytes, StandardCharsets.UTF_8)
-          Left(StatusError(new JavaBodyResponse(meta, str), url))
+          Left(StatusError(new JavaResponseInfo(res, bytes), url))
         }
         errorHandler(res)
       }
@@ -280,7 +280,7 @@ class JavaHttpClient[F[_]: Async](javaHttp: JHttpClient, defaultHeaders: Map[Str
     fetchFold(request, jsonBodyParser[T](url))
 
   private def fetchString(request: HttpRequest): F[HttpResponse] =
-    fetch(request, stringHandler()).map(res => new StringResponse(res))
+    fetch(request, bytesHandler()).map(res => new JavaResponse(res))
 
   private def fetchFold[T](
     request: HttpRequest,

@@ -2,6 +2,7 @@ package com.malliina.http
 
 import okhttp3.Response
 
+import java.nio.charset.{Charset, StandardCharsets}
 import scala.collection.JavaConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 
 object OkHttpResponse {
@@ -9,10 +10,12 @@ object OkHttpResponse {
 }
 
 class OkHttpResponse(val inner: Response) extends HttpResponse {
-  val innerBody = Option(inner.body())
+  private val innerBody = Option(inner.body())
+  override val charset: Charset =
+    innerBody.map(_.contentType().charset(StandardCharsets.UTF_8)).getOrElse(StandardCharsets.UTF_8)
+  override val body: Array[Byte] = innerBody.map(_.bytes()).getOrElse(Array.emptyByteArray)
   // Intentionally reads the body eagerly
-  val string = innerBody.map(_.string())
-  override val asString = string.getOrElse("")
+  val string = new String(body, charset)
 
   def code: Int = inner.code()
 
