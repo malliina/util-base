@@ -1,9 +1,9 @@
 package com.malliina.http
 
+import com.malliina.http.JavaResponseMeta.toMap
 import java.net.http.{HttpResponse => JHttpResponse, HttpHeaders => JHttpHeaders}
 import java.net.http.HttpResponse.ResponseInfo
 import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, mapAsScalaMapConverter}
-import JavaResponseMeta.toMap
 
 class StringResponse(inner: JHttpResponse[String]) extends HttpResponse {
   override def asString: String = inner.body()
