@@ -8,18 +8,30 @@ import com.malliina.web.TokenValidator.buildVerifier
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.SignedJWT
+import com.malliina.values.Readable
+import com.malliina.web.StaticTokenValidator.decode
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object StaticTokenValidator:
   private val log = AppLogger(getClass)
 
+  def decode[T](token: TokenValue, f: => String, onMissing: => ErrorMessage)(using
+    r: Readable[T]
+  ): Either[JWTError, T] =
+    read[String](token, f, onMissing).flatMap: str =>
+      r.read(str)
+        .left
+        .map: err =>
+          log.error(s"Failed to decode token '$token'. $err")
+          ParseError.simple(token, err)
+
   def read[T](token: TokenValue, f: => T, onMissing: => ErrorMessage): Either[JWTError, T] =
     try Option(f).toRight(MissingData(token, onMissing))
     catch
       case pe: ParseException =>
         log.error(s"Parse error for token '$token'.", pe)
-        Left(ParseError(token, pe))
+        Left(ParseError.exception(token, pe))
 
 /** @param keys
   *   public keys used to validate tokens
@@ -62,7 +74,7 @@ abstract class TokenValidator(issuers: Seq[Issuer], maxClockSkew: FiniteDuration
     jwt <- read(token, SignedJWT.parse(token.value), ErrorMessage("token"))
     claims <- read(token, jwt.getJWTClaimsSet, ErrorMessage("claims"))
     kid <- read(token, jwt.getHeader.getKeyID, ErrorMessage(Kid))
-    iss <- read(token, claims.getIssuer, ErrorMessage(IssuerKey)).map(Issuer.apply)
+    iss <- decode[Issuer](token, claims.getIssuer, ErrorMessage(IssuerKey))
     exp <- read(token, claims.getExpirationTime, ErrorMessage(Exp))
   yield ParsedJWT(jwt, claims, kid, iss, exp.toInstant, token)
 

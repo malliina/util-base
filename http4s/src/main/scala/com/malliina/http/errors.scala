@@ -8,8 +8,11 @@ import io.circe.{Codec, Decoder, Encoder}
 case class SingleError(message: ErrorMessage, key: String) derives Codec.AsObject
 
 object SingleError:
-  def apply(message: String): SingleError = apply(ErrorMessage(message), "generic")
-  def input(message: String) = apply(ErrorMessage(message), "input")
+  object keys:
+    val Generic = "generic"
+    val Input = "input"
+  def apply(message: String): SingleError = apply(ErrorMessage(message), keys.Generic)
+  def input(message: String) = apply(ErrorMessage(message), keys.Input)
 
 case class Errors(errors: NonEmptyList[SingleError]) derives Codec.AsObject:
   def message = errors.head.message

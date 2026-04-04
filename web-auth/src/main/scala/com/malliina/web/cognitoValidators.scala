@@ -1,14 +1,17 @@
 package com.malliina.web
 
-import java.time.Instant
-
+import cats.syntax.all.toShow
 import com.malliina.values.*
+
+import java.time.Instant
 
 object CognitoValidator extends OAuthKeys:
   val Access = "access"
   val Id = "id"
+  val Sub = "sub"
   val TokenUse = "token_use"
   val UserKey = "username"
+  val CognitoUserKey = "cognito:username"
   val GroupsKey = "cognito:groups"
 
 case class CognitoValidation(
@@ -28,17 +31,14 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: Clien
   protected def toUser(verified: Verified): Either[JWTError, CognitoUser] =
     val jwt = verified.parsed
     for
-      username <- jwt
-        .readString(UserKey)
-        .filterOrElse(
-          _.nonEmpty,
-          InvalidClaims(jwt.token, ErrorMessage("Username must be non-empty."))
-        )
-      email <- jwt.readStringOpt(EmailKey)
+      sub <- jwt.parse[CognitoUserId](Sub)
+      username <- jwt.parse[Username](UserKey)
+      email <- jwt.parseOpt[Email](EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
     yield CognitoUser(
-      Username.unsafe(username),
-      email.flatMap(Email.build(_).toOption),
+      sub,
+      username,
+      email,
       groups,
       verified
     )
@@ -49,7 +49,7 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: Clien
   ): Either[JWTError, ParsedJWT] =
     for
       _ <- checkClaim(TokenUse, Access, parsed)
-      _ <- checkClaim(ClientIdKey, clientId.value, parsed)
+      _ <- checkClaim(ClientIdKey, clientId.show, parsed)
     yield parsed
 
 class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[ClientId])
@@ -61,9 +61,11 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] =
     val jwt = verified.parsed
     for
-      email <- jwt.parse[Email](EmailKey)
+      sub <- jwt.parse[CognitoUserId](Sub)
+      user <- jwt.parse[Username](CognitoUserKey)
+      email <- jwt.parseOpt[Email](EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
-    yield CognitoUser(Username.unsafe(email.email), Option(email), groups, verified)
+    yield CognitoUser(sub, user, email, groups, verified)
 
   override protected def validateClaims(
     parsed: ParsedJWT,
@@ -71,5 +73,5 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[
   ): Either[JWTError, ParsedJWT] =
     for
       _ <- checkClaim(TokenUse, Id, parsed)
-      _ <- checkContains(Aud, clientIds.map(_.value), parsed)
+      _ <- checkContains(Aud, clientIds.map(_.show), parsed)
     yield parsed

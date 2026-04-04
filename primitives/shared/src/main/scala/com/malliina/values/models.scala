@@ -5,7 +5,7 @@ case class Email private (email: String) extends AnyVal with WrappedString {
 }
 object Email extends StringCompanion[Email] {
   override def build(input: String): Either[ErrorMessage, Email] =
-    if (input.contains("@")) Right(apply(input))
+    if (input.contains("@") && input.length >= 3) Right(apply(input))
     else Left(ErrorMessage(s"Invalid email: '$input'."))
 }
 
@@ -19,10 +19,9 @@ case class Username private (name: String) extends AnyVal with WrappedString {
   override def value: String = name
 }
 object Username extends StringCompanion[Username] {
-  val empty = Username("")
-
   override def build(input: String): Either[ErrorMessage, Username] =
-    Right(apply(input))
+    if (input.isBlank) Left(ErrorMessage("Username cannot be blank."))
+    else Right(apply(input))
 }
 
 case class Password private (pass: String) extends AnyVal with WrappedString {

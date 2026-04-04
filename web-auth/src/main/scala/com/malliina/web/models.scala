@@ -1,6 +1,7 @@
 package com.malliina.web
 
 import cats.effect.Sync
+import cats.implicits.toShow
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationCodec
 import com.malliina.values.*
@@ -16,30 +17,33 @@ import java.text.ParseException
 import java.time.Instant
 import scala.concurrent.duration.{Duration, DurationLong}
 
-case class ClientId(value: String) extends AnyVal with WrappedString
-object ClientId extends StringCompanion[ClientId]:
+opaque type ClientId = String
+object ClientId extends ValidatedString[ClientId]:
   override def build(input: String): Either[ErrorMessage, ClientId] =
     if input.isBlank then Left(ErrorMessage("Client ID must not be blank."))
-    else Right(apply(input))
+    else Right(input)
+  override def write(t: ClientId): String = t
 
-case class ClientSecret(value: String) extends AnyVal with WrappedString
-object ClientSecret extends StringCompanion[ClientSecret]:
+opaque type ClientSecret = String
+object ClientSecret extends ValidatedString[ClientSecret]:
   override def build(input: String): Either[ErrorMessage, ClientSecret] =
     if input.isBlank then Left(ErrorMessage("Client secret must not be blank."))
-    else Right(apply(input))
+    else Right(input)
+  override def write(t: ClientSecret): String = t
 
-case class Issuer(value: String) extends AnyVal with WrappedString
-object Issuer extends StringCompanion[Issuer]:
+opaque type Issuer = String
+object Issuer extends ValidatedString[Issuer]:
   override def build(input: String): Either[ErrorMessage, Issuer] =
     if input.isBlank then Left(ErrorMessage("Issuer must not be blank."))
-    else Right(apply(input))
+    else Right(input)
+  override def write(t: Issuer): String = t
 
-case class Code(code: String) extends AnyVal with WrappedString:
-  override def value = code
-object Code extends StringCompanion[Code]:
+opaque type Code = String
+object Code extends ValidatedString[Code]:
   override def build(input: String): Either[ErrorMessage, Code] =
     if input.isBlank then Left(ErrorMessage("Code must not be blank."))
-    else Right(apply(input))
+    else Right(input)
+  override def write(t: Code): String = t
 
 case class AuthConf(clientId: ClientId, clientSecret: ClientSecret)
 
@@ -52,7 +56,7 @@ case class Start(
 case class Callback(
   requestState: Option[String],
   sessionState: Option[String],
-  codeQuery: Option[String],
+  codeQuery: Option[Code],
   requestNonce: Option[String],
   redirectUrl: FullUrl
 )
@@ -260,13 +264,25 @@ case class ParsedJWT(
 
   import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-  def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
+  def parse[T](key: String)(using r: Readable[T]): Either[JWTError, T] =
     readString(key).flatMap(s => r.read(s).left.map(err => InvalidClaims(token, err)))
+
+  def parseOpt[T](key: String)(using r: Readable[T]): Either[JWTError, Option[T]] =
+    readStringOpt(key).fold(
+      err => Left(err),
+      opt =>
+        opt
+          .map: s =>
+            r.read(s).map(t => Option(t)).left.map(err => InvalidClaims(token, err))
+          .getOrElse:
+            Right(None)
+    )
 
   def readString(key: String): Either[JWTError, String] =
     read(claims.getStringClaim(key), key)
 
-  def readStringOpt(key: String) = read(Option(claims.getStringClaim(key)), key)
+  def readStringOpt(key: String): Either[JWTError, Option[String]] =
+    read(Option(claims.getStringClaim(key)), key)
 
   def readStringListOrEmpty(key: String): Either[JWTError, Seq[String]] =
     readStringList(key).map(_.getOrElse(Nil))
@@ -333,20 +349,28 @@ object JWTKeys:
 trait JWTUser:
   def username: Username
 
+opaque type CognitoUserId = String
+
+object CognitoUserId extends ValidatedString[CognitoUserId]:
+  override def build(input: String): Either[ErrorMessage, CognitoUserId] =
+    if input.nonEmpty then Right(input)
+    else Left(ErrorMessage(s"Invalid user: '$input'."))
+
+  override def write(t: CognitoUserId): String = t
+
 case class CognitoUser(
+  sub: CognitoUserId,
   username: Username,
   email: Option[Email],
   groups: Seq[String],
   verified: Verified
 ) extends JWTUser
 
-sealed abstract class IdentityProvider(val name: String)
-
-object IdentityProvider:
-  case object LoginWithAmazon extends IdentityProvider("LoginWithAmazon")
-  case object IdentityFacebook extends IdentityProvider("Facebook")
-  case object IdentityGoogle extends IdentityProvider("Google")
-  case class IdentityOther(n: String) extends IdentityProvider(n)
+enum IdentityProvider(val name: String):
+  case LoginWithAmazon extends IdentityProvider("LoginWithAmazon")
+  case IdentityFacebook extends IdentityProvider("Facebook")
+  case IdentityGoogle extends IdentityProvider("Google")
+  case IdentityOther(n: String) extends IdentityProvider(n)
 
 case class AuthCodeConf[F[_]: Sync](
   brandName: String,
@@ -365,17 +389,17 @@ case class OAuthParams[F[_]: Sync](
   protected def commonAuthParams(authScope: String, redirectUrl: FullUrl): Map[String, String] =
     Map(
       RedirectUri -> redirectUrl.url,
-      ClientIdKey -> conf.clientId.value,
+      ClientIdKey -> conf.clientId.show,
       Scope -> authScope
     )
 
   /** Not encoded.
     */
   protected def validationParams(code: Code, redirectUrl: FullUrl): Map[String, String] = Map(
-    ClientIdKey -> conf.clientId.value,
-    ClientSecretKey -> conf.clientSecret.value,
+    ClientIdKey -> conf.clientId.show,
+    ClientSecretKey -> conf.clientSecret.show,
     RedirectUri -> redirectUrl.url,
-    CodeKey -> code.code
+    CodeKey -> code.show
   )
 
 case class StaticConf(

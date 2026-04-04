@@ -1,7 +1,7 @@
 package com.malliina.http
 
-import com.malliina.values.{ErrorMessage, Showable}
-import com.malliina.values.LiteralsSyntax.{LiteralStringContext, getUnsafe}
+import com.malliina.values.LiteralsSyntax.LiteralStringContext
+import com.malliina.values.{ErrorMessage, Showable, getUnsafe}
 
 import scala.quoted.{Expr, Quotes, quotes}
 

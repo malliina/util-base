@@ -1,6 +1,6 @@
 package com.malliina.values
 
-import com.malliina.values.LiteralsSyntax.{LiteralInt, LiteralStringContext, getUnsafe}
+import com.malliina.values.LiteralsSyntax.{LiteralInt, LiteralStringContext}
 
 import scala.quoted.{Expr, Quotes, quotes}
 
@@ -23,6 +23,8 @@ trait Literals:
       ${ Impls.UsernameLiteral('ctx, 'args) }
     inline def pass(inline args: Any*): Password =
       ${ Impls.PasswordLiteral('ctx, 'args) }
+    inline def email(inline args: Any*): Email =
+      ${ Impls.EmailLiteral('ctx, 'args) }
 
 private object Impls:
   object NonNegLiteral extends LiteralInt[NonNeg]:
@@ -63,6 +65,13 @@ private object Impls:
         .map: _ =>
           '{ Password.build(${ Expr(in) }).getUnsafe }
 
+  object EmailLiteral extends LiteralStringContext[Email]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[Email]] =
+      Email
+        .build(in)
+        .map: _ =>
+          '{ Email.build(${ Expr(in) }).getUnsafe }
+
 object LiteralsSyntax:
   trait LiteralInt[T]:
     def parse(in: Int)(using Quotes): Either[ErrorMessage, Expr[T]]
@@ -95,5 +104,5 @@ object LiteralsSyntax:
         quotes.reflect.report.error("interpolation not supported", argsExpr)
         ???
 
-  extension [T](e: Either[ErrorMessage, T])
-    def getUnsafe: T = e.fold(err => throw IllegalArgumentException(err.message), identity)
+extension [T](e: Either[ErrorMessage, T])
+  def getUnsafe: T = e.fold(err => throw IllegalArgumentException(err.message), identity)

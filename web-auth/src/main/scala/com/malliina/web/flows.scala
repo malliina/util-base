@@ -1,6 +1,7 @@
 package com.malliina.web
 
 import cats.effect.{IO, Sync}
+import cats.implicits.toShow
 import com.malliina.http.FullUrl
 import com.malliina.util.AppLogger
 import com.malliina.values.{Email, ErrorMessage}
@@ -26,7 +27,7 @@ trait FlowStart[F[_]]:
   ): Map[String, String] =
     Map(
       RedirectUri -> redirectUrl.url,
-      ClientIdKey -> clientId.value,
+      ClientIdKey -> clientId.show,
       Scope -> authScope
     )
 
@@ -83,7 +84,7 @@ trait CallbackValidator[F[_]: Sync, U]:
     val isStateOk = cb.requestState.exists(rs => cb.sessionState.contains(rs))
     if isStateOk then
       cb.codeQuery
-        .map(code => validate(Code(code), cb.redirectUrl, cb.requestNonce))
+        .map(code => validate(code, cb.redirectUrl, cb.requestNonce))
         .getOrElse:
           log.error(s"Authentication failed, code missing.")
           Sync[F].pure(Left(OAuthError(ErrorMessage("Code missing."))))
@@ -103,8 +104,8 @@ trait CallbackValidator[F[_]: Sync, U]:
     redirectUrl: FullUrl,
     conf: AuthConf
   ): Map[String, String] = Map(
-    ClientIdKey -> conf.clientId.value,
-    ClientSecretKey -> conf.clientSecret.value,
+    ClientIdKey -> conf.clientId.show,
+    ClientSecretKey -> conf.clientSecret.show,
     RedirectUri -> redirectUrl.url,
-    CodeKey -> code.code
+    CodeKey -> code.show
   )

@@ -12,7 +12,7 @@ import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 import org.http4s.circe.CirceInstances
 import org.http4s.server.Middleware
 import org.http4s.server.middleware.CSRF
-import org.http4s.{Request, Response, Status}
+import org.http4s.{Headers, Request, Response, Status}
 
 object CSRFUtils:
   type CSRFChecker[F[_]] = Middleware[F, Request[F], Response[F], Request[F], Response[F]]
@@ -47,14 +47,18 @@ class CSRFUtils(val conf: CSRFConf) extends CirceInstances:
           .build
 
   def middleware[F[_]: Async](csrf: CSRF[F, F]): CSRFChecker[F] =
+    middlewareCustom(csrf): req =>
+      val nocheck = isNoCheckHeaders(req.headers)
+      nocheck || req.method.isSafe
+
+  def middlewareCustom[F[_]: Async](csrf: CSRF[F, F])(safe: Request[F] => Boolean): CSRFChecker[F] =
     http =>
       Kleisli: (r: Request[F]) =>
-        val nocheck =
-          r.headers
-            .get(conf.headerName)
-            .map(_.head.value)
-            .contains(conf.noCheck)
         val response = http(r)
-        if nocheck then response
-        else if r.method.isSafe then response
-        else csrf.checkCSRF(r, response)
+        if safe(r) then response else csrf.checkCSRF(r, response)
+
+  def isNoCheckHeaders(headers: Headers): Boolean =
+    headers
+      .get(conf.headerName)
+      .map(_.head.value)
+      .contains(conf.noCheck)

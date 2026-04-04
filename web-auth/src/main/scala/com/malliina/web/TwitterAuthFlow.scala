@@ -24,7 +24,7 @@ object TwitterAuthFlow:
     new String(Base64.getEncoder.encode(digest), StandardCharsets.UTF_8)
 
   def signingKey(clientSecret: ClientSecret, tokenSecret: Option[String]): String =
-    val clientPart = percentEncode(clientSecret.value)
+    val clientPart = percentEncode(clientSecret.show)
     val tokenPart = tokenSecret.fold("")(percentEncode)
     s"$clientPart&$tokenPart"
 
@@ -125,7 +125,7 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
 
   case class Encodable(nonce: String, map: Map[String, String]):
     private val params = map ++ Map(
-      "oauth_consumer_key" -> conf.clientId.value,
+      "oauth_consumer_key" -> conf.clientId.show,
       "oauth_nonce" -> nonce,
       "oauth_signature_method" -> "HMAC-SHA1",
       "oauth_timestamp" -> s"${Instant.now().getEpochSecond}",

@@ -1,7 +1,7 @@
 package com.malliina.web
 
 import cats.effect.Sync
-import cats.syntax.all.toFunctorOps
+import cats.syntax.all.{toFunctorOps, toShow}
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.web.CognitoAuthFlow.{IdentityProviderKey, staticConf}
 import com.malliina.web.OAuthKeys.*
@@ -46,8 +46,8 @@ class CognitoAuthFlow[F[_]: Sync](
 
   def tokenParameters(code: Code, redirUrl: FullUrl): Map[String, String] = Map(
     GrantType -> AuthorizationCode,
-    ClientIdKey -> clientConf.clientId.value,
-    CodeKey -> code.code,
+    ClientIdKey -> clientConf.clientId.show,
+    CodeKey -> code.show,
     RedirectUri -> redirUrl.url
   )
 

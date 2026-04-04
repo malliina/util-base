@@ -1,10 +1,13 @@
 package com.malliina.web
 
 import cats.effect.Sync
+import cats.syntax.all.toShow
+import com.malliina.http.UrlSyntax.https
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.ErrorMessage
 import com.malliina.web.MicrosoftValidator.knownUrlMicrosoft
 import com.malliina.web.OAuthKeys.{Scope, scope}
+import com.malliina.web.WebLiterals.issuer
 
 import java.time.Instant
 
@@ -25,10 +28,10 @@ object MicrosoftAuthFlow:
 
 object MicrosoftValidator:
   // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-tokens
-  val knownUrlMicrosoft =
-    FullUrl("https", "login.microsoftonline.com", "/common/v2.0/.well-known/openid-configuration")
-  val issuerMicrosoftConsumer =
-    Issuer("https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0")
+  val knownUrlMicrosoft: FullUrl =
+    https"login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
+  val issuerMicrosoftConsumer: Issuer =
+    issuer"https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
 
 class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer = issuerMicrosoftConsumer)
   extends TokenValidator(issuer):
@@ -37,7 +40,7 @@ class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer = issuerMicros
     now: Instant
   ): Either[JWTError, ParsedJWT] =
     for
-      _ <- checkContains(Aud, clientIds.map(_.value), parsed)
+      _ <- checkContains(Aud, clientIds.map(_.show), parsed)
       _ <- checkNbf(parsed, now)
     yield parsed
 
