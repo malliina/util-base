@@ -22,6 +22,8 @@ object Username extends StringCompanion[Username] {
   override def build(input: String): Either[ErrorMessage, Username] =
     if (input.isBlank) Left(ErrorMessage("Username cannot be blank."))
     else Right(apply(input))
+
+  def fromEmail(email: Email): Username = apply(email.email)
 }
 
 case class Password private (pass: String) extends AnyVal with WrappedString {

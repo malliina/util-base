@@ -12,6 +12,9 @@ trait WebLiterals:
     inline def issuer(inline args: Any*): Issuer =
       ${ Impls.IssuerLiteral('ctx, 'args) }
 
+    inline def cid(inline args: Any*): ClientId =
+      ${ Impls.ClientIdLiteral('ctx, 'args) }
+
 private object Impls:
   object IssuerLiteral extends LiteralStringContext[Issuer]:
     override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[Issuer]] =
@@ -19,3 +22,10 @@ private object Impls:
         .build(in)
         .map: _ =>
           '{ Issuer.build(${ Expr(in) }).getUnsafe }
+
+  object ClientIdLiteral extends LiteralStringContext[ClientId]:
+    override def parse(in: String)(using Quotes): Either[ErrorMessage, Expr[ClientId]] =
+      ClientId
+        .build(in)
+        .map: _ =>
+          '{ ClientId.build(${ Expr(in) }).getUnsafe }
