@@ -6,11 +6,11 @@ import java.util
 import java.util.concurrent.Executors
 
 import javax.net.ssl.{SSLSocketFactory, X509TrustManager}
-import okhttp3._
+import okhttp3.*
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-object OkClient {
+object OkClient:
   val jsonMediaType: MediaType = MediaType.parse(HttpHeaders.application.json)
   val plainText = MediaType.parse(HttpHeaders.text.plain)
 
@@ -29,26 +29,23 @@ object OkClient {
 
   def newClient(
     customize: OkHttpClient.Builder => OkHttpClient.Builder = identity
-  ): OkHttpClient = {
+  ): OkHttpClient =
     val builder = new OkHttpClient.Builder()
       .protocols(util.Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
     customize(builder).build()
-  }
 
   def defaultExecutionContext() =
     ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 
   case class MultiPartFile(partName: String, fileName: String, mediaType: MediaType, file: Path)
 
-  object MultiPartFile {
+  object MultiPartFile:
     def apply(mediaType: MediaType, file: Path): MultiPartFile =
       MultiPartFile("file", file.getFileName.toString, mediaType, file)
-  }
-}
 
 class OkClient(val client: OkHttpClient, ec: ExecutionContext)
   extends OkHttpHttpClient[Future]
-  with OkHttpBackend {
+  with OkHttpBackend:
   implicit val exec: ExecutionContext = ec
 
   def execute(request: Request): Future[OkHttpResponse] =
@@ -65,11 +62,10 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
     * @return
     */
   def streamed[T](request: Request)(consume: Response => Future[T]): Future[T] =
-    raw(request).flatMap { r =>
+    raw(request).flatMap: r =>
       val work = consume(r)
       work.onComplete(_ => r.close())
       work
-    }
 
   /** Remember to close the response body if calling this method. If you don't need to stream the
     * response, call `execute` instead.
@@ -79,29 +75,24 @@ class OkClient(val client: OkHttpClient, ec: ExecutionContext)
     * @return
     *   the response
     */
-  def raw(request: Request): Future[Response] = {
+  def raw(request: Request): Future[Response] =
     val (future, callback) = RawCallback.paired()
     client.newCall(request).enqueue(callback)
     future
-  }
 
   override def flatMap[T, U](t: Future[T])(f: T => Future[U]): Future[U] = t.flatMap(f)
   override def success[T](t: T): Future[T] = Future(t)
   override def fail[T](e: Exception): Future[T] = Future.failed(e)
-}
 
-class RawCallback(p: Promise[Response]) extends Callback {
+class RawCallback(p: Promise[Response]) extends Callback:
   override def onFailure(call: Call, e: IOException): Unit =
     p.tryFailure(e)
 
   override def onResponse(call: Call, response: Response): Unit =
     p.trySuccess(response)
-}
 
-object RawCallback {
-  def paired() = {
+object RawCallback:
+  def paired() =
     val p = Promise[Response]()
     val callback = new RawCallback(p)
     (p.future, callback)
-  }
-}

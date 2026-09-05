@@ -40,7 +40,7 @@ object FS2Appender:
 
   def unsafe: ResourceParts[IO] =
     val rt = customRuntime
-    val (d, finalizer) = Dispatcher.parallel[IO].allocated.unsafeRunSync()(rt)
+    val (d, finalizer) = Dispatcher.parallel[IO].allocated.unsafeRunSync()(using rt)
     dispatched(d, finalizer >> IO(rt.shutdown()))
 
   def default[F[_]: Async](

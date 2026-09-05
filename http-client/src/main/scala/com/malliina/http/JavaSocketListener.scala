@@ -7,7 +7,7 @@ import com.malliina.http.SocketEvent.{BytesMessage, Failure, TextMessage}
 import fs2.concurrent.Topic
 import fs2.concurrent.Topic.Closed
 
-import java.net.http.{WebSocket => JWebSocket}
+import java.net.http.WebSocket as JWebSocket
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletionStage
 
@@ -15,11 +15,10 @@ class JavaSocketListener[F[_]: Functor](
   topic: Topic[F, SocketEvent],
   d: Dispatcher[F],
   url: FullUrl
-) extends JWebSocket.Listener {
-  override def onOpen(webSocket: JWebSocket): Unit = {
+) extends JWebSocket.Listener:
+  override def onOpen(webSocket: JWebSocket): Unit =
     publishSync(SocketEvent.Open(url))
     super.onOpen(webSocket)
-  }
 
   override def onText(
     webSocket: JWebSocket,
@@ -73,14 +72,12 @@ class JavaSocketListener[F[_]: Functor](
     publish(SocketEvent.Closed(url, statusCode, reason))
       .thenCompose(_ => super.onClose(webSocket, statusCode, reason).thenApply(_ => Right(())))
 
-  override def onError(webSocket: JWebSocket, error: Throwable): Unit = {
+  override def onError(webSocket: JWebSocket, error: Throwable): Unit =
     publishSync(Failure(url, Option(error)))
     super.onError(webSocket, error)
-  }
 
   private def publish(e: SocketEvent): CompletionStage[Either[Closed, Unit]] =
     topic.publish1(e).toFuture(d)
 
   private def publishSync(e: SocketEvent): Either[Closed, Unit] =
     topic.publish1(e).await(d)
-}

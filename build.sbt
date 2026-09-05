@@ -2,29 +2,6 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 import scala.sys.process.Process
 
-val versions = new {
-  val scala212 = "2.12.20"
-  val scala213 = "2.13.18"
-  val scala3 = "3.3.1"
-
-  val catsEffect = "3.7.0"
-  val ci = "1.5.0"
-  val circe = "0.14.15"
-  val commonsCodec = "1.22.0"
-  val config = "1.4.7"
-  val doobie = "1.0.0-RC12"
-  val flywayMysql = "12.5.0"
-  val fs2 = "3.13.0"
-  val http4s = "0.23.34"
-  val logback = "1.5.32"
-  val munit = "1.3.0"
-  val munitCats = "2.2.0"
-  val nimbusJwt = "10.9"
-  val okhttp = "5.3.2"
-  val scalatags = "0.13.1"
-  val slf4j = "2.0.17"
-}
-
 val munit = "org.scalameta" %% "munit" % versions.munit % Test
 
 val updateDocs = taskKey[Unit]("Updates README.md")
@@ -43,10 +20,9 @@ val moduleSettings = Seq(
   libraryDependencies ++= Seq("generic", "parser").map { m =>
     "io.circe" %% s"circe-$m" % versions.circe
   } ++ Seq(
-    "org.typelevel" %%% "case-insensitive" % versions.ci,
+    "org.typelevel" %% "case-insensitive" % versions.ci,
     munit
-  ),
-  crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+  )
 )
 val primitives = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
@@ -79,8 +55,7 @@ val httpClient = Project("http-client", file("http-client"))
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test,
       "ch.qos.logback" % s"logback-classic" % versions.logback
     ),
-    releaseProcess := tagReleaseProcess.value,
-    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+    releaseProcess := tagReleaseProcess.value
   )
 
 val okClient = project
@@ -92,8 +67,7 @@ val okClient = project
       "com.squareup.okhttp3" % "okhttp-jvm" % versions.okhttp,
       munit
     ),
-    releaseProcess := tagReleaseProcess.value,
-    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+    releaseProcess := tagReleaseProcess.value
   )
 
 val okClientIo = Project("okclient-io", file("okclient-io"))
@@ -104,8 +78,7 @@ val okClientIo = Project("okclient-io", file("okclient-io"))
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
-    releaseProcess := tagReleaseProcess.value,
-    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+    releaseProcess := tagReleaseProcess.value
   )
 
 val config = project
@@ -113,8 +86,7 @@ val config = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    libraryDependencies ++= Seq("com.typesafe" % "config" % versions.config) ++ Seq(munit),
-    crossScalaVersions := scalaVersion.value :: versions.scala213 :: versions.scala212 :: Nil
+    libraryDependencies ++= Seq("com.typesafe" % "config" % versions.config) ++ Seq(munit)
   )
 
 val fs2 = project
@@ -122,15 +94,13 @@ val fs2 = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % versions.logback,
       "co.fs2" %% "fs2-core" % versions.fs2,
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
     ),
     moduleName := "logback-fs2",
-    releaseProcess := tagReleaseProcess.value,
-    scalaVersion := versions.scala3
+    releaseProcess := tagReleaseProcess.value
   )
 
 val logstreams = project
@@ -138,7 +108,6 @@ val logstreams = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(fs2, okClientIo)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     moduleName := "logstreams-client",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "munit-cats-effect" % versions.munitCats % Test
@@ -150,7 +119,6 @@ val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitivesJvm, okClientIo)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "com.nimbusds" % "nimbus-jose-jwt" % versions.nimbusJwt,
@@ -166,12 +134,11 @@ val html = crossProject(JSPlatform, JVMPlatform)
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(primitives)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     name := "util-html",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "case-insensitive" % versions.ci,
-      "com.lihaoyi" %%% "scalatags" % versions.scalatags,
-      "org.scalameta" %%% "munit" % versions.munit % Test
+      "org.typelevel" %% "case-insensitive" % versions.ci,
+      "com.lihaoyi" %% "scalatags" % versions.scalatags,
+      "org.scalameta" %% "munit" % versions.munit % Test
     ),
     releaseProcess := tagReleaseProcess.value
   )
@@ -184,7 +151,6 @@ val database = project
   .enablePlugins(MavenCentralPlugin)
   .dependsOn(config, okClientIo)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     libraryDependencies ++=
       Seq("core", "hikari").map { m =>
         "org.tpolecat" %% s"doobie-$m" % versions.doobie
@@ -200,7 +166,6 @@ val http4s = project
   .dependsOn(htmlJvm)
   .enablePlugins(MavenCentralPlugin)
   .settings(
-    crossScalaVersions := Seq(versions.scala3),
     name := "util-http4s",
     libraryDependencies ++=
       Seq("ember-server", "circe", "dsl").map { m =>
@@ -218,7 +183,7 @@ val docs = project
     publish / skip := true,
     mdocVariables := Map("VERSION" -> version.value),
     mdocOut := (ThisBuild / baseDirectory).value,
-    updateDocs := {
+    updateDocs := Def.uncached {
       val log = streams.value.log
       val outFile = mdocOut.value
       IO.relativize((ThisBuild / baseDirectory).value, outFile)
@@ -254,7 +219,7 @@ val utilBaseRoot = project
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))),
     publish / skip := true,
     publishArtifact := false,
-    packagedArtifacts := Map.empty,
+    packagedArtifacts := Def.uncached(Map.empty),
     publish := {},
     publishLocal := {},
     releaseProcess := (okClient / tagReleaseProcess).value,

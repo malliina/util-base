@@ -1,6 +1,6 @@
 package com.malliina.values
 
-trait RangeValidator[T, U] extends ValueValidator[T, U] {
+trait RangeValidator[T, U] extends ValueValidator[T, U]:
   def empty = build(Default)
   lazy val MinValue = build(Min)
   lazy val MaxValue = build(Max)
@@ -17,4 +17,3 @@ trait RangeValidator[T, U] extends ValueValidator[T, U] {
 //        .map(u => Success(u))
 //        .getOrElse(Failure(new Exception(s"Value out of range: $t, must be within: [$Min, $Max]")))
 //    )
-}

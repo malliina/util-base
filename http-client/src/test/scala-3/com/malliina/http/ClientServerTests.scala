@@ -41,12 +41,12 @@ object TestServer:
     EmberServerBuilder
       .default[F]
       .withHost(host"0.0.0.0")
-      .withPort(port"9000")
+      .withPort(port"9009")
       .withHttpWebSocketApp(builder => makeApp(builder))
       .build
 
 case class TestSystem(client: JavaHttpClient[IO], server: Server):
-  def port = server.baseUri.port.getOrElse(9000)
+  def port = server.baseUri.port.getOrElse(9009)
 
 class ClientServerTests extends munit.CatsEffectSuite:
   val flakyApp = ResourceFunFixture(

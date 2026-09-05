@@ -6,19 +6,17 @@ import io.circe.parser.decode
 
 import java.nio.charset.Charset
 
-trait ResponseMeta {
+trait ResponseMeta:
   def charset: Charset
   def headers: Map[String, Seq[String]]
   def code: Int
   def status: Int = code
   def isSuccess: Boolean = code >= 200 && code < 300
-}
 
-trait ResponseContent[T] extends ResponseMeta {
+trait ResponseContent[T] extends ResponseMeta:
   def body: T
-}
 
-trait HttpResponse extends ResponseContent[Array[Byte]] {
+trait HttpResponse extends ResponseContent[Array[Byte]]:
   def charset: Charset
 
   /** @return
@@ -27,13 +25,12 @@ trait HttpResponse extends ResponseContent[Array[Byte]] {
   def asString: String = new String(body, charset)
   def json: Either[ParsingFailure, Json] = io.circe.parser.parse(asString)
   def parse[T: Decoder]: Either[io.circe.Error, T] = decode[T](asString)
-}
 
 sealed trait BodyMethod extends HttpMethod
 
 sealed abstract class HttpMethod(val name: String)
 
-object HttpMethod extends StringEnumCompanion[HttpMethod] {
+object HttpMethod extends StringEnumCompanion[HttpMethod]:
   override def all: Seq[HttpMethod] = Seq(Get, Post, Put, Patch, Delete, Options, Head)
   override def write(t: HttpMethod) = t.name
 
@@ -44,14 +41,12 @@ object HttpMethod extends StringEnumCompanion[HttpMethod] {
   case object Delete extends HttpMethod("DELETE")
   case object Options extends HttpMethod("OPTIONS")
   case object Head extends HttpMethod("HEAD")
-}
 
-sealed trait ResponseError {
+sealed trait ResponseError:
   def url: FullUrl
   def response: ResponseMeta
   def code: Int = response.code
   def toException: ResponseException = new ResponseException(this)
-}
 
 case class StatusError(response: HttpResponse, url: FullUrl) extends ResponseError
 
@@ -59,6 +54,5 @@ case class JsonError(error: io.circe.Error, response: HttpResponse, url: FullUrl
   extends ResponseError
 
 class ResponseException(val error: ResponseError)
-  extends Exception(s"Request to '${error.url}' failed. Status ${error.code}.") {
+  extends Exception(s"Request to '${error.url}' failed. Status ${error.code}."):
   def response = error.response
-}

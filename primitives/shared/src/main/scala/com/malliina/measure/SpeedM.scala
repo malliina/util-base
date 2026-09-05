@@ -1,12 +1,12 @@
 package com.malliina.measure
 
 import com.malliina.measure.SpeedM.{knotInKmh, meterPerSecondInKmh}
-import io.circe._
+import io.circe.*
 
 /** @param mps
   *   meters per second
   */
-case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
+case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM]:
   override def compare(that: SpeedM): Int = mps compare that.toMps
 
   def toMps = mps
@@ -27,9 +27,8 @@ case class SpeedM(mps: Double) extends AnyVal with Ordered[SpeedM] {
   def formatKnots = s"$toKnots kn"
 
   override def toString = formatMs
-}
 
-object SpeedM {
+object SpeedM:
   val zero = new SpeedM(0)
 
   val knotInKmh = 1.852d
@@ -50,4 +49,3 @@ object SpeedM {
     Decoder.decodeDouble.map(kn => apply(kn * knotInKmh / meterPerSecondInKmh)),
     Encoder.encodeDouble.contramap(_.toKnots)
   )
-}

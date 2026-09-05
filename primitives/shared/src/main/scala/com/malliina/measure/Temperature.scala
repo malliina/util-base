@@ -1,11 +1,11 @@
 package com.malliina.measure
 
-import io.circe._
+import io.circe.*
 
 /** @param celsius
   *   degrees in Celsius scale
   */
-case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature] {
+case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature]:
   override def compare(that: Temperature): Int = toCelsius compare that.toCelsius
 
   def toCelsius = celsius
@@ -23,9 +23,8 @@ case class Temperature(celsius: Double) extends AnyVal with Ordered[Temperature]
   def formatCelsius = s"$toCelsius C"
 
   override def toString = formatCelsius
-}
 
-object Temperature {
+object Temperature:
   private val kelvinDiff = 273.15d
   val zeroCelsius = new Temperature(0)
   val absoluteZero = new Temperature(-kelvinDiff)
@@ -44,4 +43,3 @@ object Temperature {
   def fahrenheitToCelsius(f: Double): Double = (f - 32) * 5 / 9
   def kelvinToCelsius(k: Double): Double = k - kelvinDiff
   def celsiusToKelvin(c: Double): Double = c + kelvinDiff
-}

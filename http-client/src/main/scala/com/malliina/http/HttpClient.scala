@@ -4,11 +4,11 @@ import cats.effect.{Async, Resource, Sync}
 import com.malliina.storage.StorageSize
 import io.circe.{Decoder, Encoder, Json}
 
-import java.net.http.{HttpClient => JHttpClient}
+import java.net.http.HttpClient as JHttpClient
 import java.nio.file.Path
 import scala.concurrent.duration.FiniteDuration
 
-object HttpClient {
+object HttpClient:
   def javaResource[F[_]: Sync](
     builder: JHttpClient.Builder
   ): Resource[F, JHttpClient] =
@@ -18,9 +18,8 @@ object HttpClient {
     defaultHeaders: Map[String, String] = Map.empty
   ): Resource[F, JavaHttpClient[F]] =
     javaResource(builder).map(javaClient => new JavaHttpClient(javaClient, defaultHeaders))
-}
 
-trait SimpleHttpClient[F[_]] {
+trait SimpleHttpClient[F[_]]:
   def getAs[T: Decoder](url: FullUrl): F[T] = getAs[T](url, Map.empty[String, String])
 
   def getAs[T: Decoder](url: FullUrl, headers: Map[String, String]): F[T]
@@ -106,9 +105,8 @@ trait SimpleHttpClient[F[_]] {
     to: Path,
     headers: Map[String, String]
   ): F[Either[StatusError, StorageSize]]
-}
 
-trait HttpClient[F[_]] extends SimpleHttpClient[F] {
+trait HttpClient[F[_]] extends SimpleHttpClient[F]:
   type Socket <: WebSocketOps[F]
 
   def socket(
@@ -121,4 +119,3 @@ trait HttpClient[F[_]] extends SimpleHttpClient[F] {
     headers: Map[String, String],
     backoffTime: FiniteDuration
   ): Resource[F, ReconnectingSocket[F, Socket]]
-}

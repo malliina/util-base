@@ -7,29 +7,25 @@ import com.malliina.http.JavaSocket.log
 import com.malliina.http.Ops.CompletionStageOps
 import com.malliina.util.AppLogger
 
-import java.net.http.{WebSocket => JWebSocket}
+import java.net.http.WebSocket as JWebSocket
 import java.util.concurrent.CompletionStage
 
-object JavaSocket {
+object JavaSocket:
   private val log = AppLogger(getClass)
-}
 
-class JavaSocket[F[_]: Async](impl: JWebSocket, url: FullUrl) extends WebSocketOps[F] {
+class JavaSocket[F[_]: Async](impl: JWebSocket, url: FullUrl) extends WebSocketOps[F]:
   private val F = Async[F]
 
   override def sendMessage(s: String): F[Boolean] =
     trySend(s).as(true).handleError(_ => false)
 
   override def trySend(message: String): F[Unit] =
-    delayF(impl.sendText(message, true)).void.handleErrorWith { cause =>
+    delayF(impl.sendText(message, true)).void.handleErrorWith: cause =>
       F.raiseError(new SendException(s"Failed to send '$message' to '$url'.", Option(cause)))
-    }
 
-  override def closeNow: F[Unit] = delayF {
+  override def closeNow: F[Unit] = delayF:
     log.info(s"Closing socket to '$url'...")
     impl.sendClose(JWebSocket.NORMAL_CLOSURE, "").thenApply(_ => impl.abort())
-  }
 
   private def delayF[A](thunk: => CompletionStage[A]): F[A] =
     F.delay(thunk).flatMap(_.effect[F])
-}

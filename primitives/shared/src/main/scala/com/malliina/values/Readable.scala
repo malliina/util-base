@@ -7,15 +7,14 @@ import org.typelevel.ci.CIString
 
 import scala.util.Try
 
-trait Readable[R] {
+trait Readable[R]:
   def read(value: String): Either[ErrorMessage, R]
   def map[S](f: R => S): Readable[S] = (s: String) => read(s).map(f)
   def flatMap[S](f: R => Readable[S]): Readable[S] = (s: String) =>
     read(s).flatMap(r => f(r).read(s))
   def emap[S](f: R => Either[ErrorMessage, S]): Readable[S] = (s: String) => read(s).flatMap(f)
-}
 
-object Readable {
+object Readable:
   def apply[T](implicit r: Readable[T]): Readable[T] = r
   implicit val string: Readable[String] = (s: String) => Right(s)
   implicit val int: Readable[Int] = fromTry("integer", s => Try(s.toInt))
@@ -26,14 +25,12 @@ object Readable {
   implicit val speed: Readable[SpeedM] = double.map(SpeedM.apply)
   implicit val temperature: Readable[Temperature] = double.map(Temperature.apply)
   implicit val storageSize: Readable[StorageSize] = long.map(StorageSize.apply)
-  implicit val boolean: Readable[Boolean] = string.emap {
+  implicit val boolean: Readable[Boolean] = string.emap:
     case "true"  => Right(true)
     case "false" => Right(false)
     case other   => Left(ErrorMessage(s"Invalid boolean: '$other'."))
-  }
   implicit val url: Readable[FullUrl] = string.emap(FullUrl.build)
   implicit val ciString: Readable[CIString] = string.map(s => CIString(s))
 
   private def fromTry[T](label: String, t: String => Try[T]) =
     string.emap(s => t(s).fold(_ => Left(ErrorMessage(s"Invalid $label: '$s'.")), v => Right(v)))
-}

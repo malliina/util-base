@@ -5,10 +5,8 @@ import okhttp3.RequestBody
 
 trait OkBodyBuilder[T] extends BodyBuilder[T, RequestBody]
 
-object OkBodyBuilder {
-  implicit val json: OkBodyBuilder[Json] = new OkBodyBuilder[Json] {
+object OkBodyBuilder:
+  implicit val json: OkBodyBuilder[Json] = new OkBodyBuilder[Json]:
     override def build(t: Json): RequestBody =
       RequestBody.create(t.noSpaces, OkClient.jsonMediaType)
     override def contentType: String = OkClient.jsonMediaType.toString
-  }
-}

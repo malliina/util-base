@@ -5,12 +5,12 @@ import cats.effect.{Async, IO, Sync}
 import cats.effect.kernel.Resource
 import com.malliina.http.io.HttpClientIO.CallOps
 import com.malliina.http.{CatsEffects, Effects, FullUrl, HttpClient, HttpResponse, OkClient, OkHttpBackend, OkHttpHttpClient, OkHttpResponse, ReconnectingSocket}
-import okhttp3._
+import okhttp3.*
 
 import java.io.IOException
 import scala.concurrent.duration.FiniteDuration
 
-object HttpClientIO {
+object HttpClientIO:
   def resource[F[_]: Async]: Resource[F, HttpClientF2[F]] =
     configure(identity)
 
@@ -23,26 +23,22 @@ object HttpClientIO {
 
   def apply(http: OkHttpClient = OkClient.okHttpClient): HttpClientIO = new HttpClientIO(http)
 
-  implicit class CallOps(val call: Call) extends AnyVal {
+  implicit class CallOps(val call: Call) extends AnyVal:
     def io[F[_]: Async]: F[Response] = run(call)
-  }
 
-  def run[F[_]: Async](call: Call): F[Response] = Async[F].async_ { cb =>
-    call.enqueue(new Callback {
+  def run[F[_]: Async](call: Call): F[Response] = Async[F].async_ : cb =>
+    call.enqueue(new Callback:
       override def onResponse(call: Call, response: Response): Unit =
         cb(Right(response))
 
       override def onFailure(call: Call, e: IOException): Unit =
-        cb(Left(e))
-    })
-  }
-}
+        cb(Left(e)))
 
 class HttpClientIO(client: OkHttpClient) extends HttpClientF2[IO](client)
 
 class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient)
   extends HttpClientF[F](new CatsEffects[F]())
-  with OkHttpBackend {
+  with OkHttpBackend:
   override def streamed[T](request: Request)(consume: Response => F[T]): F[T] =
     raw(request).bracket(consume)(r => Sync[F].delay(r.close()))
   override def raw(request: Request): F[Response] =
@@ -53,15 +49,13 @@ class HttpClientF2[F[_]: Async](val client: OkHttpClient = OkClient.okHttpClient
     backoffTime: FiniteDuration
   ): Resource[F, ReconnectingSocket[F, OkSocket[F]]] =
     WebSocketF.build(url, headers, client, backoffTime)
-}
 
 abstract class HttpClientF[F[_]](effects: Effects[F])
   extends HttpClient[F]
-  with OkHttpHttpClient[F] {
+  with OkHttpHttpClient[F]:
   type Socket = OkSocket[F]
   override def execute(request: Request): F[HttpResponse] =
     effects.map(raw(request))(OkHttpResponse.apply)
   override def flatMap[T, U](t: F[T])(f: T => F[U]): F[U] = effects.flatMap(t)(f)
   override def success[T](t: T): F[T] = effects.success(t)
   override def fail[T](e: Exception): F[T] = effects.fail(e)
-}

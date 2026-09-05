@@ -2,20 +2,19 @@ package com.malliina.concurrent
 
 import com.malliina.util.Utils
 
-import scala.concurrent._
+import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
-trait Futures {
+trait Futures:
   def before[T, TO](other: Future[TO])(f: Future[T])(implicit ec: ExecutionContext): Future[T] =
-    promisedFuture[T] { p =>
-      f.onComplete(result => if (!p.isCompleted) p.tryComplete(result))
+    promisedFuture[T]: p =>
+      f.onComplete(result => if !p.isCompleted then p.tryComplete(result))
       other.onComplete(_ =>
-        if (!p.isCompleted)
+        if !p.isCompleted then
           p.tryFailure(
             new TimeoutException(s"Unable to complete task within the given time limit.")
           )
       )
-    }
 
   /** Constructs a future that is completed according to `keepPromise`. This pattern can be used to
     * convert callback-based APIs to Future-based ones. For example, parameter `keepPromise` can
@@ -29,11 +28,9 @@ trait Futures {
     * @return
     *   the future completion value
     */
-  def promisedFuture[T](keepPromise: Promise[T] => Unit): Future[T] = {
+  def promisedFuture[T](keepPromise: Promise[T] => Unit): Future[T] =
     val p = Promise[T]()
     keepPromise(p)
     p.future
-  }
-}
 
 object Futures extends Futures

@@ -37,10 +37,11 @@ abstract class DiscoveringAuthFlow[F[_]: Sync, V](codeConf: AuthCodeConf[F])
       oauthConf <- fetchConf()
       tokens <- http.postFormAs[SimpleTokens](oauthConf.tokenEndpoint, params)
       result <- client.validate(tokens.idToken)
-    yield for
-      verified <- result
-      _ <- checkNonce(tokens.idToken, verified, requestNonce)
-    yield verified
+    yield
+      for
+        verified <- result
+        _ <- checkNonce(tokens.idToken, verified, requestNonce)
+      yield verified
 
   def checkNonce(
     idToken: IdToken,

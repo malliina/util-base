@@ -7,16 +7,15 @@ import fs2.Stream
 
 import scala.concurrent.duration.DurationInt
 
-class HttpClientIOTests extends munit.CatsEffectSuite {
+class HttpClientIOTests extends munit.CatsEffectSuite:
   val Authorization = HttpHeaders.Authorization
   val httpFixture = ResourceFunFixture(HttpClientIO.resource[IO])
 
-  httpFixture.test("can make io request".ignore) { client =>
+  httpFixture.test("can make io request".ignore): client =>
     val res = client.get(FullUrl("http", "www.google.com", ""))
     res.map(r => assert(r.isSuccess))
-  }
 
-  httpFixture.test("websocket".ignore) { client =>
+  httpFixture.test("websocket".ignore): client =>
     WebSocketF
       .build[IO](
         FullUrl.wss("logs.malliina.com", "/ws/sources"),
@@ -24,14 +23,12 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
         Map(Authorization -> TestAuth.authorizationValue(Username.unsafe("test"), "test1234")),
         client.client
       )
-      .use { socket =>
+      .use: socket =>
         val events: IO[Vector[SocketEvent]] =
           socket.events.take(3).evalTap(e => IO(println(e))).compile.toVector
         events
-      }
-  }
 
-  test("interruption".ignore) {
+  test("interruption".ignore):
     val start = System.currentTimeMillis()
     val tick =
       Stream(0L) ++ Stream.awakeEvery[IO](1.seconds).map(d => System.currentTimeMillis() - start)
@@ -39,6 +36,3 @@ class HttpClientIOTests extends munit.CatsEffectSuite {
     val stream = tick.interruptWhen(interrupter).repeat.take(10)
     val outcome = stream.compile.toVector.unsafeRunSync()
     println(outcome)
-  }
-
-}

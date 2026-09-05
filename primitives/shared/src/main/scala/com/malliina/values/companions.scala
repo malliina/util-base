@@ -4,53 +4,43 @@ import cats.Show
 import io.circe.{Codec, Decoder, Encoder}
 import org.typelevel.ci.CIString
 
-trait Identifier extends Any {
+trait Identifier extends Any:
   def id: String
   override def toString: String = id
-}
 
 @deprecated("Use WrappedString instead.", "1.10.0")
-abstract class Wrapped(val value: String) {
+abstract class Wrapped(val value: String):
   override def toString: String = value
-}
 
-trait WrappedString extends Any {
+trait WrappedString extends Any:
   def value: String
   override def toString: String = value
-}
 
-trait WrappedId extends Any {
+trait WrappedId extends Any:
   def id: Long
   override def toString = s"$id"
-}
 
-trait WrappedLong extends Any {
+trait WrappedLong extends Any:
   def num: Long
   override def toString = s"$num"
-}
 
-trait WrappedValue[T] {
+trait WrappedValue[T]:
   def value: T
-}
 
-abstract class IdentCompanion[T <: Identifier] extends ValidatingCompanion[String, T] {
+abstract class IdentCompanion[T <: Identifier] extends ValidatingCompanion[String, T]:
   override def write(t: T): String = t.id
-}
 
-abstract class IdCompanion[T <: WrappedId] extends ValidatingCompanion[Long, T] {
+abstract class IdCompanion[T <: WrappedId] extends ValidatingCompanion[Long, T]:
   override def write(t: T): Long = t.id
-}
 
-abstract class StringCompanion[T <: WrappedString] extends ValidatingCompanion[String, T] {
+abstract class StringCompanion[T <: WrappedString] extends ValidatingCompanion[String, T]:
   override def write(t: T): String = t.value
-}
 
-object CICodec {
+object CICodec:
   implicit val ciCodec: Codec[CIString] = Codec.from(
     Decoder.decodeString.map(s => CIString(s)),
     Encoder.encodeString.contramap[CIString](_.toString)
   )
-}
 import CICodec.ciCodec
 
 abstract class ValidatedCIString[T] extends ValidatingCompanion[CIString, T]
@@ -67,7 +57,7 @@ abstract class ValidatingCompanion[Raw, T](implicit
   o: Ordering[Raw],
   r: Readable[Raw],
   s: Show[Raw]
-) {
+):
   implicit val json: Codec[T] = Codec.from(
     d.emap(raw => build(raw).left.map(err => err.message)),
     e.contramap[T](write)
@@ -80,16 +70,13 @@ abstract class ValidatingCompanion[Raw, T](implicit
     build(input).fold(err => throw new IllegalArgumentException(err.message), identity)
   def write(t: T): Raw
   def defaultError(in: Raw): ErrorMessage = ErrorMessage(s"Invalid input: '$in'.")
-}
 
-abstract class WrappedEnum[T <: WrappedString] extends StringEnumCompanion[T] {
+abstract class WrappedEnum[T <: WrappedString] extends StringEnumCompanion[T]:
   override def write(t: T) = t.value
-}
 
-abstract class StringEnumCompanion[T] extends EnumCompanion[String, T] {
+abstract class StringEnumCompanion[T] extends EnumCompanion[String, T]:
   override def build(input: String): Either[ErrorMessage, T] =
     all.find(i => write(i).toLowerCase == input.toLowerCase).toRight(defaultError(input))
-}
 
 abstract class EnumCompanion[Raw, T](implicit
   f: Decoder[Raw],
@@ -97,7 +84,7 @@ abstract class EnumCompanion[Raw, T](implicit
   o: Ordering[Raw],
   r: Readable[Raw],
   s: Show[Raw]
-) extends ValidatingCompanion[Raw, T] {
+) extends ValidatingCompanion[Raw, T]:
   def all: Seq[T]
   def resolveName(item: T): Raw = write(item)
   private def allNames = all.map(write).mkString(", ")
@@ -107,4 +94,3 @@ abstract class EnumCompanion[Raw, T](implicit
 
   override def defaultError(input: Raw) =
     ErrorMessage(s"Unknown input: '$input'. Must be one of: $allNames.")
-}
