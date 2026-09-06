@@ -6,7 +6,7 @@ import com.malliina.web.WebLiterals.issuer
 import java.time.Instant
 
 object GoogleValidator:
-  val issuers = Seq(issuer"https://accounts.google.com", issuer"accounts.google.com")
+  val issuers: Seq[Issuer] = Seq(issuer"https://accounts.google.com", issuer"accounts.google.com")
 
   def apply(clientIds: Seq[ClientId]): GoogleValidator = new GoogleValidator(clientIds, issuers)
 
