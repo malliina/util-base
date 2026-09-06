@@ -1,5 +1,5 @@
 object versions:
-  val scala3 = "3.9.0"
+  val scala3 = "3.8.4"
 
   val catsEffect = "3.7.0"
   val ci = "1.5.0"
