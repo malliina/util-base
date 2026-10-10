@@ -35,9 +35,9 @@ object DoobieDatabase:
       if conf.autoMigrate then migrate[F](conf).map(r => Option(r)) else Sync[F].pure(None)
     maybeMigration.map(_ => DoobieDatabase(noPoolTransactor(conf)))
 
-  def dataSource[F[_]: Async](ds: DataSource): Resource[F, DoobieDatabase[F]] =
+  def dataSource[F[_]: Async](ds: DataSource, threadPoolSize: Int): Resource[F, DoobieDatabase[F]] =
     ExecutionContexts
-      .fixedThreadPool[F](16) // connect EC
+      .fixedThreadPool[F](threadPoolSize) // connect EC
       .map: ec =>
         val tx = Transactor.fromDataSource[F](ds, ec, Option(makeLogHandler[F]))
         DoobieDatabase(tx)
@@ -87,9 +87,10 @@ object DoobieDatabase:
         log.info(s"Disconnecting from ${ds.getJdbcUrl} as ${conf.getUsername}...")
         ds.close()
 
+    val threadPoolSize = if conf.getMaximumPoolSize > 0 then conf.getMaximumPoolSize else 10
     for
       ds <- Resource.make(connect)(disconnect)
-      db <- dataSource(ds)
+      db <- dataSource(ds, threadPoolSize)
     yield db
 
   private def noPoolTransactor[F[_]: Async](conf: Conf): Transactor[F] =
