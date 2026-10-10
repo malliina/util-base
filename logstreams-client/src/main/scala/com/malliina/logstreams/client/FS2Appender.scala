@@ -12,16 +12,17 @@ import com.malliina.logstreams.client.FS2Appender.ResourceParts
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object FS2Appender:
-  val executor: ExecutorService = Executors.newCachedThreadPool()
-  val ec: ExecutionContext = ExecutionContext.fromExecutor(executor)
+  lazy val executor: ExecutorService = Executors.newCachedThreadPool()
+  lazy val ec: ExecutionContext = ExecutionContext.fromExecutor(executor)
 
   case class SocketComps[F[_]](comps: LoggingComps[F], http: HttpClient[F])
 
   case class ResourceParts[F[_]](
     comps: LoggingComps[F],
+    emitInterval: FiniteDuration,
     http: HttpClient[F],
     finalizer: F[Unit]
   )
@@ -36,7 +37,12 @@ object FS2Appender:
       http <- HttpClientIO.resource[IO]
     yield SocketComps(comps, http)
     val (comps, finalizer) = d.unsafeRunSync(resource.allocated[SocketComps[IO]])
-    ResourceParts(comps.comps, comps.http, finalizer >> dispatcherFinalizer)
+    ResourceParts(
+      comps.comps,
+      LogstreamsConf.DefaultEmitInterval,
+      comps.http,
+      finalizer >> dispatcherFinalizer
+    )
 
   def unsafe: ResourceParts[IO] =
     val rt = customRuntime
@@ -46,12 +52,13 @@ object FS2Appender:
   def default[F[_]: Async](
     d: Dispatcher[F],
     http: HttpClient[F],
+    emitInterval: FiniteDuration,
     extraHeaders: Map[String, String] = Map.empty
   ): F[FS2AppenderF[F]] =
     FS2AppenderComps
       .io(d)
       .map: parts =>
-        FS2AppenderF(ResourceParts(parts, http, Async[F].unit), extraHeaders)
+        FS2AppenderF(ResourceParts(parts, emitInterval, http, Async[F].unit), extraHeaders)
 
 class FS2Appender(
   res: ResourceParts[IO]
@@ -83,7 +90,7 @@ class FS2AppenderF[F[_]: Async](
         socketClosable = closer
         val connectAndReceive = socket.events
         val send = logEvents
-          .groupWithin(100, 200.millis)
+          .groupWithin(100, res.emitInterval)
           .flatMap(es => retry(socket.trySendJson(LogEvents(es.toList))))
           .onComplete:
             fs2.Stream

@@ -24,6 +24,7 @@ case class FS2AppenderComps[F[_], E](
 object FS2AppenderComps:
   def resource[F[_]: Async]: Resource[F, LoggingComps[F]] =
     Dispatcher.parallel[F].evalMap(d => io(d))
+
   def io[F[_]: Concurrent](d: Dispatcher[F]): F[LoggingComps[F]] = for
     topic <- Topic[F, ILoggingEvent]
     signal <- SignallingRef[F, Boolean](false)

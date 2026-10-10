@@ -13,7 +13,7 @@ import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.output.MigrateResult
 
 import javax.sql.DataSource
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, DurationLong}
 
 object DoobieDatabase:
   private val log = AppLogger(getClass)
@@ -58,7 +58,9 @@ object DoobieDatabase:
     hikari.setJdbcUrl(conf.url.url)
     hikari.setUsername(conf.user)
     hikari.setPassword(conf.pass.pass)
-    hikari.setMaxLifetime(60.seconds.toMillis)
+    hikari.setMaxLifetime(conf.maxLifetime.toMillis)
+    hikari.setKeepaliveTime(conf.keepaliveTime.toMillis)
+    hikari.setIdleTimeout(conf.idleTimeout.toMillis)
     hikari.setMaximumPoolSize(conf.maxPoolSize)
     hikari
 
@@ -77,7 +79,7 @@ object DoobieDatabase:
     val F = Async[F]
     val connect = F.delay:
       log.info(
-        s"Connecting to '${conf.getJdbcUrl}' with pool size ${conf.getMaximumPoolSize} as ${conf.getUsername}..."
+        s"Connecting to '${conf.getJdbcUrl}' as ${conf.getUsername} with pool size ${conf.getMaximumPoolSize} maxLifetime ${conf.getMaxLifetime.millis} keepaliveTime ${conf.getKeepaliveTime.millis}..."
       )
       new HikariDataSource(conf)
     val disconnect = (ds: HikariDataSource) =>
